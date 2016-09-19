@@ -1,0 +1,23 @@
+version: '1.0'
+
+steps:
+  unit-test-step:
+    image: codefresh/buildpacks:all-5
+    working-directory: ${{initial-clone}}
+    commands:
+        - npm install
+        - gulp lint
+        - gulp no.onlys
+        - gulp unit_test
+        - gulp coveralls
+        - gulp integ_test
+        - gulp clean
+
+  build-step:
+    type: build
+    image-name: codefresh/cf-container-logger
+
+  push to registry:
+    type: push
+    candidate: ${{build-step}}
+    tag: ${{CF_BRANCH}}
