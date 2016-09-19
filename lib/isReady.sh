@@ -1,0 +1,1 @@
+bash -c "grep -q 'ready' ./state.json"
