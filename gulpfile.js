@@ -33,14 +33,14 @@ gulp.task('set_unit_env_vars', function () {
 });
 
 gulp.task('unit_pre', function () {
-	return gulp.src(['**/*.js', '!**/*.spec.js', '!**/node_modules/**/*.js', '!.debug/**/*.js', '!gulpfile.js', '!coverage/**/*.js'])
+	return gulp.src(['**/*.js', '!**/*.spec.js', '!**/node_modules/**/*.js', '!.debug/**/*.js', '!gulpfile.js', '!newrelic.js', '!lib/index.js', '!coverage/**/*.js'])
 		.pipe(istanbul({ // Covering files
 			instrumenter: isparta.Instrumenter,
 			includeUntested: true
 		}))
 		.pipe(istanbul.hookRequire()) // Force `require` to return covered files
 		.on('finish', function () {
-			gulp.src(['**/*.unit.spec.js', '!**/node_modules/**/*.js'], {read: false})
+			gulp.src(['**/*.unit.spec.js', '!**/node_modules/**/*.js', '!lib/index.js'], {read: false})
 				.pipe(mocha({reporter: 'spec', timeout: '10000'}))
 				.pipe(istanbul.writeReports({
 					reporters: ['lcov'],
