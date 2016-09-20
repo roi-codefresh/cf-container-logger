@@ -1,10 +1,5 @@
 # cf-container-logger
 # required environment variables:
-    # FIREBASE_SECRET - the secret key to write to the firebase reference
-    # FIREBASE_STEP_URL - the firebase refrence to write to
-    # CONTAINER_ID - container id to listen on
-    # ENV - name of environment (used for newrelic)
-    # NEWRELIC_LICENSE_KEY - newrelic license key
-    # DOCKER_IP - ip of the docker daemon used to listen on the container
-    # DOCKER_PORT - port of the docker daemon used to listen on the container
-    # DOCKER_CERT_PATH - certifacte path for the docker daemon
+    # FIREBASE_AUTH_URL - the main firebase ref to authenticate on initialization
+    # FIREBASE_SECRET - the secret key to write to the firebase auth url and all future derived urls
+    # LOGGER_ID - logger id. if a container will include this id in its label, we will log it
