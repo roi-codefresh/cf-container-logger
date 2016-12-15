@@ -1,3 +1,3 @@
 FROM node:onbuild
 
-CMD ["npm", "start", "-s"]
+CMD ["node", "lib/index.js"]
