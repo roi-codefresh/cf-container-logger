@@ -59,7 +59,7 @@ describe('Logger tests', () => {
                 const firebaseSecret         = 'firebaseSecret';
                 const findExistingContainers = false;
 
-                const logger                          = new Logger(loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers);
+                const logger                        = new Logger(loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers);
                 logger._listenForNewContainers      = sinon.spy();
                 logger._writeNewState               = sinon.spy();
                 logger._listenForExistingContainers = sinon.spy();
@@ -102,7 +102,7 @@ describe('Logger tests', () => {
                 const firebaseSecret         = 'firebaseSecret';
                 const findExistingContainers = 'true';
 
-                const logger                          = new Logger(loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers);
+                const logger                        = new Logger(loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers);
                 logger._listenForNewContainers      = sinon.spy();
                 logger._writeNewState               = sinon.spy();
                 logger._listenForExistingContainers = sinon.spy();
@@ -251,7 +251,7 @@ describe('Logger tests', () => {
         it('should call handleContainer in case of an create event', () => {
             const startSpy = sinon.spy();
             const onSpy    = sinon.spy();
-            const Logger = proxyquire('../lib/logger', {
+            const Logger   = proxyquire('../lib/logger', {
                 'docker-events': function () {
                     return {
                         start: startSpy,
@@ -392,7 +392,7 @@ describe('Logger tests', () => {
                         });
                         const infoSpy  = sinon.spy();
                         const errorSpy = sinon.spy();
-                        const Logger = proxyquire('../lib/logger', {
+                        const Logger   = proxyquire('../lib/logger', {
                             'cf-logs': {
                                 Logger: () => {
                                     return {
@@ -417,14 +417,15 @@ describe('Logger tests', () => {
                         const firebaseSecret         = 'firebaseSecret';
                         const findExistingContainers = false;
                         const logger                 = new Logger(loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers);
-                        logger._writeNewState = sinon.spy();
+                        logger._writeNewState        = sinon.spy();
                         const container              = {
                             Id: 'containerId',
                             Status: ContainerStatus.CREATE,
                             Labels: {
-                                'io.codefresh.loggerId': 'loggerId',
-                                'io.codefresh.loggerFirebaseUrl': 'firebaseUrl',
-                                'io.codefresh.loggerStrategy': LoggerStrategy.ATTACH
+                                'io.codefresh.logger.id': 'loggerId',
+                                'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                                'io.codefresh.logger.strategy': LoggerStrategy.ATTACH,
+                                'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl'
                             }
                         };
                         logger._handleContainer(container);
@@ -440,13 +441,13 @@ describe('Logger tests', () => {
 
                 describe('should print an error in case firebase ref fails', () => {
 
-                    it('error while create firebase ref', () => {
+                    it('error while create firebase logger ref', () => {
                         const startSpy = sinon.spy(() => {
                             return Q.resolve();
                         });
                         const infoSpy  = sinon.spy();
                         const errorSpy = sinon.spy();
-                        const Logger = proxyquire('../lib/logger', {
+                        const Logger   = proxyquire('../lib/logger', {
                             'cf-logs': {
                                 Logger: () => {
                                     return {
@@ -471,21 +472,83 @@ describe('Logger tests', () => {
                         const firebaseSecret         = 'firebaseSecret';
                         const findExistingContainers = false;
                         const logger                 = new Logger(loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers);
-                        logger._writeNewState = sinon.spy();
+                        logger._writeNewState        = sinon.spy();
                         const container              = {
                             Id: 'containerId',
                             Status: ContainerStatus.CREATE,
                             Labels: {
-                                'io.codefresh.loggerId': 'loggerId',
-                                'io.codefresh.loggerFirebaseUrl': 'firebaseUrl',
-                                'io.codefresh.loggerStrategy': LoggerStrategy.ATTACH
+                                'io.codefresh.logger.id': 'loggerId',
+                                'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                                'io.codefresh.logger.strategy': LoggerStrategy.ATTACH,
+                                'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl'
                             }
                         };
                         logger._handleContainer(container);
                         expect(errorSpy).to.have.been.calledOnce; // jshint ignore:line
-                        expect(errorSpy).to.have.been.calledWith('Error: Failed to create a new firebase ref; caused by Error: firebase error'); // jshint ignore:line
+                        expect(errorSpy)
+                            .to
+                            .have
+                            .been
+                            .calledWith('Error: Failed to create a new firebase logger ref; caused by Error: firebase error'); // jshint ignore:line
 
                     });
+
+                    it('error while create firebase lastUpdate ref', () => {
+                        const startSpy = sinon.spy(() => {
+                            return Q.resolve();
+                        });
+                        const infoSpy  = sinon.spy();
+                        const errorSpy = sinon.spy();
+                        const Logger   = proxyquire('../lib/logger', {
+                            'cf-logs': {
+                                Logger: () => {
+                                    return {
+                                        info: infoSpy,
+                                        error: errorSpy
+                                    };
+
+                                }
+                            },
+                            'firebase': function (url) {
+                                if (url === 'firebaseUrl') {
+                                    return;
+                                } else if (url === 'lastUpdateUrl') {
+                                    throw new Error('firebase error');
+                                }
+                            },
+                            './ContainerLogger': function () {
+                                return {
+                                    start: startSpy
+                                };
+                            }
+                        });
+
+                        const loggerId               = 'loggerId';
+                        const firebaseAuthUrl        = 'firebaseAuthUrl';
+                        const firebaseSecret         = 'firebaseSecret';
+                        const findExistingContainers = false;
+                        const logger                 = new Logger(loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers);
+                        logger._writeNewState        = sinon.spy();
+                        const container              = {
+                            Id: 'containerId',
+                            Status: ContainerStatus.CREATE,
+                            Labels: {
+                                'io.codefresh.logger.id': 'loggerId',
+                                'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                                'io.codefresh.logger.strategy': LoggerStrategy.ATTACH,
+                                'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl'
+                            }
+                        };
+                        logger._handleContainer(container);
+                        expect(errorSpy).to.have.been.calledOnce; // jshint ignore:line
+                        expect(errorSpy)
+                            .to
+                            .have
+                            .been
+                            .calledWith('Error: Failed to create a new firebase lastUpdate ref; caused by Error: firebase error'); // jshint ignore:line
+
+                    });
+
 
                     it('error while starting the container logger instance', (done) => {
                         const startSpy = sinon.spy(() => {
@@ -493,7 +556,7 @@ describe('Logger tests', () => {
                         });
                         const infoSpy  = sinon.spy();
                         const errorSpy = sinon.spy();
-                        const Logger = proxyquire('../lib/logger', {
+                        const Logger   = proxyquire('../lib/logger', {
                             'cf-logs': {
                                 Logger: () => {
                                     return {
@@ -518,21 +581,26 @@ describe('Logger tests', () => {
                         const firebaseSecret         = 'firebaseSecret';
                         const findExistingContainers = false;
                         const logger                 = new Logger(loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers);
-                        logger._writeNewState = sinon.spy();
+                        logger._writeNewState        = sinon.spy();
                         const container              = {
                             Id: 'containerId',
                             Status: ContainerStatus.CREATE,
                             Labels: {
-                                'io.codefresh.loggerId': 'loggerId',
-                                'io.codefresh.loggerFirebaseUrl': 'firebaseUrl',
-                                'io.codefresh.loggerStrategy': LoggerStrategy.ATTACH
+                                'io.codefresh.logger.id': 'loggerId',
+                                'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                                'io.codefresh.logger.strategy': LoggerStrategy.ATTACH,
+                                'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl'
                             }
                         };
                         logger._handleContainer(container);
 
                         setTimeout(() => {
                             expect(errorSpy).to.have.been.calledOnce; // jshint ignore:line
-                            expect(errorSpy).to.have.been.calledWith('Error: Failed to start logging for container:containerId; caused by Error: ContainerLogger error'); // jshint ignore:line
+                            expect(errorSpy)
+                                .to
+                                .have
+                                .been
+                                .calledWith('Error: Failed to start logging for container:containerId; caused by Error: ContainerLogger error'); // jshint ignore:line
                             done();
                         }, 10);
 
@@ -549,7 +617,7 @@ describe('Logger tests', () => {
             it('was previously handled', () => {
                 const infoSpy  = sinon.spy();
                 const errorSpy = sinon.spy();
-                const Logger = proxyquire('../lib/logger', {
+                const Logger   = proxyquire('../lib/logger', {
                     'cf-logs': {
                         Logger: () => {
                             return {
@@ -570,11 +638,11 @@ describe('Logger tests', () => {
                     Id: 'containerId',
                     Status: 'start',
                     Labels: {
-                        'io.codefresh.loggerFirebaseUrl': 'firebaseUrl',
-                        'io.codefresh.loggerStrategy': LoggerStrategy.LOGS
+                        'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                        'io.codefresh.logger.strategy': LoggerStrategy.LOGS
                     }
                 };
-                logger._containerHandled   = sinon.spy(() => {
+                logger._containerHandled     = sinon.spy(() => {
                     return true;
                 });
                 logger._handleContainer(container);
@@ -591,7 +659,7 @@ describe('Logger tests', () => {
             it('no loggerId', () => {
                 const infoSpy  = sinon.spy();
                 const errorSpy = sinon.spy();
-                const Logger = proxyquire('../lib/logger', {
+                const Logger   = proxyquire('../lib/logger', {
                     'cf-logs': {
                         Logger: () => {
                             return {
@@ -612,8 +680,8 @@ describe('Logger tests', () => {
                     Id: 'containerId',
                     Status: ContainerStatus.CREATE,
                     Labels: {
-                        'io.codefresh.loggerFirebaseUrl': 'firebaseUrl',
-                        'io.codefresh.loggerStrategy': LoggerStrategy.LOGS
+                        'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                        'io.codefresh.logger.strategy': LoggerStrategy.LOGS
                     }
                 };
                 logger._handleContainer(container);
@@ -628,7 +696,7 @@ describe('Logger tests', () => {
             it('no containerId', () => {
                 const infoSpy  = sinon.spy();
                 const errorSpy = sinon.spy();
-                const Logger = proxyquire('../lib/logger', {
+                const Logger   = proxyquire('../lib/logger', {
                     'cf-logs': {
                         Logger: () => {
                             return {
@@ -648,9 +716,9 @@ describe('Logger tests', () => {
                 const container              = {
                     Status: ContainerStatus.CREATE,
                     Labels: {
-                        'io.codefresh.loggerId': 'loggerId',
-                        'io.codefresh.loggerFirebaseUrl': 'firebaseUrl',
-                        'io.codefresh.loggerStrategy': LoggerStrategy.LOGS
+                        'io.codefresh.logger.id': 'loggerId',
+                        'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                        'io.codefresh.logger.strategy': LoggerStrategy.LOGS
                     }
                 };
                 logger._handleContainer(container);
@@ -662,7 +730,7 @@ describe('Logger tests', () => {
             it('no container status', () => {
                 const infoSpy  = sinon.spy();
                 const errorSpy = sinon.spy();
-                const Logger = proxyquire('../lib/logger', {
+                const Logger   = proxyquire('../lib/logger', {
                     'cf-logs': {
                         Logger: () => {
                             return {
@@ -682,9 +750,9 @@ describe('Logger tests', () => {
                 const container              = {
                     Id: 'containerId',
                     Labels: {
-                        'io.codefresh.loggerId': 'loggerId',
-                        'io.codefresh.loggerFirebaseUrl': 'firebaseUrl',
-                        'io.codefresh.loggerStrategy': LoggerStrategy.LOGS
+                        'io.codefresh.logger.id': 'loggerId',
+                        'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                        'io.codefresh.logger.strategy': LoggerStrategy.LOGS
                     }
                 };
                 logger._handleContainer(container);
@@ -693,10 +761,10 @@ describe('Logger tests', () => {
 
             });
 
-            it('logger id provided but not firebase url', () => {
+            it('logger id provided but no firebase url', () => {
                 const infoSpy  = sinon.spy();
                 const errorSpy = sinon.spy();
-                const Logger = proxyquire('../lib/logger', {
+                const Logger   = proxyquire('../lib/logger', {
                     'cf-logs': {
                         Logger: () => {
                             return {
@@ -717,8 +785,8 @@ describe('Logger tests', () => {
                     Id: 'containerId',
                     Status: ContainerStatus.CREATE,
                     Labels: {
-                        'io.codefresh.loggerId': 'loggerId',
-                        'io.codefresh.loggerStrategy': LoggerStrategy.LOGS
+                        'io.codefresh.logger.id': 'loggerId',
+                        'io.codefresh.logger.strategy': LoggerStrategy.LOGS
                     }
                 };
                 logger._handleContainer(container);
@@ -727,10 +795,10 @@ describe('Logger tests', () => {
 
             });
 
-            it('no strategy provided', () => {
+            it('logger id provided but no firebase lastUpdate url', () => {
                 const infoSpy  = sinon.spy();
                 const errorSpy = sinon.spy();
-                const Logger = proxyquire('../lib/logger', {
+                const Logger   = proxyquire('../lib/logger', {
                     'cf-logs': {
                         Logger: () => {
                             return {
@@ -751,8 +819,44 @@ describe('Logger tests', () => {
                     Id: 'containerId',
                     Status: ContainerStatus.CREATE,
                     Labels: {
-                        'io.codefresh.loggerId': 'loggerId',
-                        'io.codefresh.loggerFirebaseUrl': 'loggerFirebaseUrl'
+                        'io.codefresh.logger.id': 'loggerId',
+                        'io.codefresh.logger.firebase.logsUrl': 'logsUrl',
+                        'io.codefresh.logger.strategy': LoggerStrategy.LOGS
+                    }
+                };
+                logger._handleContainer(container);
+                expect(errorSpy).to.have.been.calledOnce; // jshint ignore:line
+                expect(errorSpy).to.have.been.calledWith('Container: containerId does contain a loggerFirebaseLastUpdateUrl label');
+
+            });
+
+            it('no strategy provided', () => {
+                const infoSpy  = sinon.spy();
+                const errorSpy = sinon.spy();
+                const Logger   = proxyquire('../lib/logger', {
+                    'cf-logs': {
+                        Logger: () => {
+                            return {
+                                info: infoSpy,
+                                error: errorSpy
+                            };
+
+                        }
+                    }
+                });
+
+                const loggerId               = 'loggerId';
+                const firebaseAuthUrl        = 'firebaseAuthUrl';
+                const firebaseSecret         = 'firebaseSecret';
+                const findExistingContainers = false;
+                const logger                 = new Logger(loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers);
+                const container              = {
+                    Id: 'containerId',
+                    Status: ContainerStatus.CREATE,
+                    Labels: {
+                        'io.codefresh.logger.id': 'loggerId',
+                        'io.codefresh.logger.firebase.logsUrl': 'loggerFirebaseUrl',
+                        'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl'
                     }
                 };
                 logger._handleContainer(container);
@@ -764,7 +868,7 @@ describe('Logger tests', () => {
             it('provided strategy does not exist', () => {
                 const infoSpy  = sinon.spy();
                 const errorSpy = sinon.spy();
-                const Logger = proxyquire('../lib/logger', {
+                const Logger   = proxyquire('../lib/logger', {
                     'cf-logs': {
                         Logger: () => {
                             return {
@@ -785,9 +889,10 @@ describe('Logger tests', () => {
                     Id: 'containerId',
                     Status: ContainerStatus.CREATE,
                     Labels: {
-                        'io.codefresh.loggerId': 'loggerId',
-                        'io.codefresh.loggerFirebaseUrl': 'loggerFirebaseUrl',
-                        'io.codefresh.loggerStrategy': 'non-existing-strategy'
+                        'io.codefresh.logger.id': 'loggerId',
+                        'io.codefresh.logger.firebase.logsUrl': 'loggerFirebaseUrl',
+                        'io.codefresh.logger.strategy': 'non-existing-strategy',
+                        'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl'
                     }
                 };
                 logger._handleContainer(container);
@@ -799,7 +904,7 @@ describe('Logger tests', () => {
             it('container status is create and strategy is logs', () => {
                 const infoSpy  = sinon.spy();
                 const errorSpy = sinon.spy();
-                const Logger = proxyquire('../lib/logger', {
+                const Logger   = proxyquire('../lib/logger', {
                     'cf-logs': {
                         Logger: () => {
                             return {
@@ -820,9 +925,10 @@ describe('Logger tests', () => {
                     Id: 'containerId',
                     Status: ContainerStatus.CREATE,
                     Labels: {
-                        'io.codefresh.loggerId': 'loggerId',
-                        'io.codefresh.loggerFirebaseUrl': 'loggerFirebaseUrl',
-                        'io.codefresh.loggerStrategy': LoggerStrategy.LOGS
+                        'io.codefresh.logger.id': 'loggerId',
+                        'io.codefresh.logger.firebase.logsUrl': 'loggerFirebaseUrl',
+                        'io.codefresh.logger.strategy': LoggerStrategy.LOGS,
+                        'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl'
                     }
                 };
                 logger._handleContainer(container);

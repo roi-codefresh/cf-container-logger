@@ -1,10 +1,10 @@
 'use strict';
 
-const Q          = require('q');
-const chai       = require('chai');
-const expect     = chai.expect;
-const sinon      = require('sinon');
-const sinonChai  = require('sinon-chai');
+const Q         = require('q');
+const chai      = require('chai');
+const expect    = chai.expect;
+const sinon     = require('sinon');
+const sinonChai = require('sinon-chai');
 chai.use(sinonChai);
 const ContainerLogger = require('../lib/ContainerLogger');
 const LoggerStrategy  = require('../lib/enums').LoggerStrategy;
@@ -40,9 +40,10 @@ describe('Container Logger tests', () => {
                     }
                 };
                 const firebaseLogger     = {};
+                const firebaseLastUpdate = {};
                 const loggerStrategy     = LoggerStrategy.LOGS;
 
-                const containerLogger                   = new ContainerLogger(containerId, containerInterface, firebaseLogger, loggerStrategy);
+                const containerLogger                 = new ContainerLogger(containerId, containerInterface, firebaseLogger, firebaseLastUpdate, loggerStrategy);
                 containerLogger._logMessageToFirebase = sinon.spy();
                 return containerLogger.start()
                     .then(() => {
@@ -75,9 +76,10 @@ describe('Container Logger tests', () => {
                     }
                 };
                 const firebaseLogger     = {};
+                const firebaseLastUpdate = {};
                 const loggerStrategy     = LoggerStrategy.LOGS;
 
-                const containerLogger                   = new ContainerLogger(containerId, containerInterface, firebaseLogger, loggerStrategy);
+                const containerLogger                 = new ContainerLogger(containerId, containerInterface, firebaseLogger, firebaseLastUpdate, loggerStrategy);
                 containerLogger._logMessageToFirebase = sinon.spy();
                 return containerLogger.start();
             });
@@ -99,9 +101,10 @@ describe('Container Logger tests', () => {
                     }
                 };
                 const firebaseLogger     = {};
+                const firebaseLastUpdate = {};
                 const loggerStrategy     = 'non-existing-strategy';
 
-                const containerLogger = new ContainerLogger(containerId, containerInterface, firebaseLogger, loggerStrategy);
+                const containerLogger = new ContainerLogger(containerId, containerInterface, firebaseLogger, firebaseLastUpdate, loggerStrategy);
                 return containerLogger.start()
                     .then(() => {
                         return Q.reject(new Error('should have failed'));
@@ -118,9 +121,10 @@ describe('Container Logger tests', () => {
                     }
                 };
                 const firebaseLogger     = {};
+                const firebaseLastUpdate = {};
                 const loggerStrategy     = LoggerStrategy.LOGS;
 
-                const containerLogger = new ContainerLogger(containerId, containerInterface, firebaseLogger, loggerStrategy);
+                const containerLogger = new ContainerLogger(containerId, containerInterface, firebaseLogger, firebaseLastUpdate, loggerStrategy);
                 return containerLogger.start()
                     .then(() => {
                         return Q.reject(new Error('should have failed'));
@@ -147,9 +151,10 @@ describe('Container Logger tests', () => {
                     }
                 };
                 const firebaseLogger     = {};
+                const firebaseLastUpdate = {};
                 const loggerStrategy     = LoggerStrategy.ATTACH;
 
-                const containerLogger = new ContainerLogger(containerId, containerInterface, firebaseLogger, loggerStrategy);
+                const containerLogger = new ContainerLogger(containerId, containerInterface, firebaseLogger, firebaseLastUpdate, loggerStrategy);
                 return containerLogger.start()
                     .then(() => {
                         return Q.reject(new Error('should have failed'));
@@ -182,9 +187,10 @@ describe('Container Logger tests', () => {
                     }
                 };
                 const firebaseLogger     = {};
+                const firebaseLastUpdate = {};
                 const loggerStrategy     = LoggerStrategy.LOGS;
 
-                const containerLogger = new ContainerLogger(containerId, containerInterface, firebaseLogger, loggerStrategy);
+                const containerLogger = new ContainerLogger(containerId, containerInterface, firebaseLogger, firebaseLastUpdate, loggerStrategy);
                 return containerLogger.start()
                     .then(() => {
                         return Q.reject(new Error('should have failed'));
@@ -209,19 +215,17 @@ describe('Container Logger tests', () => {
             const containerId        = 'containerId';
             const containerInterface = {};
 
-            const pushSpy        = sinon.spy();
-            const setSpy         = sinon.spy();
-            const firebaseLogger = {
-                child: () => {
-                    return {
-                        push: pushSpy,
-                        set: setSpy
-                    };
-                }
+            const pushSpy            = sinon.spy();
+            const setSpy             = sinon.spy();
+            const firebaseLogger     = {
+                push: pushSpy
             };
-            const loggerStrategy = LoggerStrategy.LOGS;
+            const firebaseLastUpdate = {
+                set: setSpy
+            };
+            const loggerStrategy     = LoggerStrategy.LOGS;
 
-            const containerLogger = new ContainerLogger(containerId, containerInterface, firebaseLogger, loggerStrategy);
+            const containerLogger = new ContainerLogger(containerId, containerInterface, firebaseLogger, firebaseLastUpdate, loggerStrategy);
             containerLogger._logMessageToFirebase('message');
             expect(pushSpy).to.have.been.calledOnce; // jshint ignore:line
             expect(pushSpy).to.have.been.calledWith('message'); // jshint ignore:line
