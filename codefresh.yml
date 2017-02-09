@@ -2,7 +2,7 @@ version: '1.0'
 
 steps:
   unit-test-step:
-    image: codefresh/buildpacks:all-5
+    image: node:6.9.2
     environment:
         - COVERALLS_TOKEN=${{COVERALLS_TOKEN}}
     working-directory: ${{initial-clone}}
