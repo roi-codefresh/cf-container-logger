@@ -8,12 +8,12 @@ steps:
     working-directory: ${{initial-clone}}
     commands:
         - npm install
-        - gulp lint
-        - gulp no.onlys
-        - gulp unit_test
-        - gulp coveralls
-        - gulp integ_test
-        - gulp clean
+        - npm run gulp lint
+        - npm run gulp no.onlys
+        - npm run gulp unit_test
+        - npm run gulp coveralls
+        - npm run gulp integ_test
+        - npm run gulp clean
 
   build-step:
     type: build
