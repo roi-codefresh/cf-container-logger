@@ -31,6 +31,7 @@
     "sinon-chai": "^2.8.0"
   },
   "scripts": {
+    "gulp": "gulp",
     "start": "node lib/index.js"
   }
 }

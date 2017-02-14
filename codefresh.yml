@@ -2,18 +2,18 @@ version: '1.0'
 
 steps:
   unit-test-step:
-    image: codefresh/buildpacks:all-5
+    image: node:6.9.2
     environment:
         - COVERALLS_TOKEN=${{COVERALLS_TOKEN}}
     working-directory: ${{initial-clone}}
     commands:
         - npm install
-        - gulp lint
-        - gulp no.onlys
-        - gulp unit_test
-        - gulp coveralls
-        - gulp integ_test
-        - gulp clean
+        - npm run gulp lint
+        - npm run gulp no.onlys
+        - npm run gulp unit_test
+        - npm run gulp coveralls
+        - npm run gulp integ_test
+        - npm run gulp clean
 
   build-step:
     type: build

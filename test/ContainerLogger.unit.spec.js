@@ -15,7 +15,7 @@ describe('Container Logger tests', () => {
 
         describe('positive', () => {
 
-            it('should handle a received message on data stream event in case tty is true', () => {
+            it('should separate the stdout from stderr', () => {
                 const containerInspect   = {
                     Config: {
                         Tty: true
@@ -36,42 +36,7 @@ describe('Container Logger tests', () => {
                         callback(null, containerInspect);
                     },
                     logs: (options, callback) => {
-                        callback(null, stream);
-                    }
-                };
-                const firebaseLogger     = {};
-                const firebaseLastUpdate = {};
-                const loggerStrategy     = LoggerStrategy.LOGS;
-
-                const containerLogger                 = new ContainerLogger(containerId, containerInterface, firebaseLogger, firebaseLastUpdate, loggerStrategy);
-                containerLogger._logMessageToFirebase = sinon.spy();
-                return containerLogger.start()
-                    .then(() => {
-                        expect(receivedEvent).to.equal('data');
-                        expect(containerLogger._logMessageToFirebase).to.have.been.calledOnce; // jshint ignore:line
-                    });
-            });
-
-            it('should handle a received message on readable stream event in case tty is false', () => {
-                const containerInspect = {
-                    Config: {
-                        Tty: false
-                    }
-                };
-                const stream           = {
-                    on: (event, callback) => {
-                        if (event === 'end') {
-                            callback();
-                        }
-                    }
-                };
-
-                const containerId        = 'containerId';
-                const containerInterface = {
-                    inspect: (callback) => {
-                        callback(null, containerInspect);
-                    },
-                    logs: (options, callback) => {
+                        expect(options.stdout ^ options.stderr).to.be.trusty; // jshint ignore:line
                         callback(null, stream);
                     }
                 };
@@ -83,6 +48,142 @@ describe('Container Logger tests', () => {
                 containerLogger._logMessageToFirebase = sinon.spy();
                 return containerLogger.start();
             });
+            
+            it('should handle a send message from stderr as error', () => {
+                const containerInspect = {
+                    Config: {
+                        Tty: true
+                    }
+                };
+
+                let receivedStdoutEvent, receivedStderrEvent;
+                const stdoutStream = {
+                    on: (event, callback) => {
+                        if (event !== 'end') {
+                            receivedStdoutEvent = event;
+                            callback('message');
+                        }
+                    }
+                };
+                const stderrStream = {
+                    on: (event, callback) => {
+                        if (event !== 'end') {
+                            receivedStderrEvent = event;
+                            callback('error');
+                        }
+                    }
+                };
+
+                const containerId        = 'containerId';
+                const containerInterface = {
+                    inspect: (callback) => {
+                        callback(null, containerInspect);
+                    },
+                    logs: (options, callback) => {
+                        if (options.stdout) {
+                            callback(null, stdoutStream);
+                        } else {
+                            callback(null, stderrStream);
+                        }
+                    }
+                };
+                const firebaseLogger     = {};
+                const firebaseLastUpdate = {};
+                const loggerStrategy     = LoggerStrategy.LOGS;
+
+                const containerLogger                 = new ContainerLogger(containerId, containerInterface, firebaseLogger, firebaseLastUpdate, loggerStrategy);
+                containerLogger._logMessageToFirebase = sinon.spy();
+                return containerLogger.start()
+                    .then(() => {
+                        expect(containerLogger._logMessageToFirebase).to.have.been.calledWith('message', false); // jshint ignore:line
+                        expect(containerLogger._logMessageToFirebase).to.have.been.calledWith('error', true); // jshint ignore:line
+                    });
+            });
+
+            it('should handle a received message on data stream event in case tty is true', () => {
+                const containerInspect = {
+                    Config: {
+                        Tty: true
+                    }
+                };
+
+                let receivedStdoutEvent, receivedStderrEvent;
+                const stdoutStream = {
+                    on: (event, callback) => {
+                        if (event !== 'end') {
+                            receivedStdoutEvent = event;
+                            callback('message');
+                        }
+                    }
+                };
+                const stderrStream = {
+                    on: (event, callback) => {
+                        if (event !== 'end') {
+                            receivedStderrEvent = event;
+                            callback('message');
+                        }
+                    }
+                };
+
+                const containerId        = 'containerId';
+                const containerInterface = {
+                    inspect: (callback) => {
+                        callback(null, containerInspect);
+                    },
+                    logs: (options, callback) => {
+                        if (options.stdout) {
+                            callback(null, stdoutStream);
+                        } else {
+                            callback(null, stderrStream);
+                        }
+                    }
+                };
+                const firebaseLogger     = {};
+                const firebaseLastUpdate = {};
+                const loggerStrategy     = LoggerStrategy.LOGS;
+
+                const containerLogger                 = new ContainerLogger(containerId, containerInterface, firebaseLogger, firebaseLastUpdate, loggerStrategy);
+                containerLogger._logMessageToFirebase = sinon.spy();
+                return containerLogger.start()
+                    .then(() => {
+                        expect(receivedStdoutEvent).to.equal('data');
+                        expect(receivedStderrEvent).to.equal('data');
+                        expect(containerLogger._logMessageToFirebase).to.have.been.calledTwice; // jshint ignore:line
+                    });
+            });
+
+            it('should handle a received message on readable stream event in case tty is false',
+                () => {
+                    const containerInspect = {
+                        Config: {
+                            Tty: false
+                        }
+                    };
+                    const stream           = {
+                        on: (event, callback) => {
+                            if (event === 'end') {
+                                callback();
+                            }
+                        }
+                    };
+
+                    const containerId        = 'containerId';
+                    const containerInterface = {
+                        inspect: (callback) => {
+                            callback(null, containerInspect);
+                        },
+                        logs: (options, callback) => {
+                            callback(null, stream);
+                        }
+                    };
+                    const firebaseLogger     = {};
+                    const firebaseLastUpdate = {};
+                    const loggerStrategy     = LoggerStrategy.LOGS;
+
+                    const containerLogger                 = new ContainerLogger(containerId, containerInterface, firebaseLogger, firebaseLastUpdate, loggerStrategy);
+                    containerLogger._logMessageToFirebase = sinon.spy();
+                    return containerLogger.start();
+                });
 
         });
 
@@ -109,7 +210,9 @@ describe('Container Logger tests', () => {
                     .then(() => {
                         return Q.reject(new Error('should have failed'));
                     }, (err) => {
-                        expect(err.toString()).to.contain('Strategy: non-existing-strategy is not supported');
+                        expect(err.toString())
+                            .to
+                            .contain('Strategy: non-existing-strategy is not supported');
                     });
             });
 
@@ -139,14 +242,14 @@ describe('Container Logger tests', () => {
                         Tty: true
                     }
                 };
-                let receivedAttachOptions;
+                let receivedAttachOptions = [];
                 const containerId        = 'containerId';
                 const containerInterface = {
                     inspect: (callback) => {
                         callback(null, containerInspect);
                     },
                     attach: (options, callback) => {
-                        receivedAttachOptions = options;
+                        receivedAttachOptions.push(options);
                         callback(new Error('attach error'));
                     }
                 };
@@ -159,11 +262,10 @@ describe('Container Logger tests', () => {
                     .then(() => {
                         return Q.reject(new Error('should have failed'));
                     }, (err) => {
-                        expect(receivedAttachOptions).to.deep.equal({
-                            'stderr': true,
-                            'stdout': true,
-                            'stream': true,
-                            'tty': true
+                        receivedAttachOptions.forEach((options) => {
+                            expect(options.stdout ^ options.stderr).to.equal(1);
+                            expect(options.stream).to.equal(true);
+                            expect(options.tty).to.equal(true);
                         });
                         expect(err.toString()).to.contain('attach error');
                     });
@@ -175,14 +277,14 @@ describe('Container Logger tests', () => {
                         Tty: true
                     }
                 };
-                let receivedLogsOptions;
+                let receivedLogsOptions = [];
                 const containerId        = 'containerId';
                 const containerInterface = {
                     inspect: (callback) => {
                         callback(null, containerInspect);
                     },
                     logs: (options, callback) => {
-                        receivedLogsOptions = options;
+                        receivedLogsOptions.push(options);
                         callback(new Error('logs error'));
                     }
                 };
@@ -195,10 +297,9 @@ describe('Container Logger tests', () => {
                     .then(() => {
                         return Q.reject(new Error('should have failed'));
                     }, (err) => {
-                        expect(receivedLogsOptions).to.deep.equal({
-                            'follow': 1,
-                            'stderr': 1,
-                            'stdout': 1
+                        receivedLogsOptions.forEach((options) => {
+                            expect(options.stdout ^ options.stderr).to.equal(1);
+                            expect(options.follow).to.equal(1);
                         });
                         expect(err.toString()).to.contain('logs error');
                     });
@@ -229,6 +330,28 @@ describe('Container Logger tests', () => {
             containerLogger._logMessageToFirebase('message');
             expect(pushSpy).to.have.been.calledOnce; // jshint ignore:line
             expect(pushSpy).to.have.been.calledWith('message'); // jshint ignore:line
+            expect(setSpy).to.have.been.calledOnce; // jshint ignore:line
+        });
+        
+        it('should log error to firebase with red decoration', () => {
+
+            const containerId        = 'containerId';
+            const containerInterface = {};
+
+            const pushSpy            = sinon.spy();
+            const setSpy             = sinon.spy();
+            const firebaseLogger     = {
+                push: pushSpy
+            };
+            const firebaseLastUpdate = {
+                set: setSpy
+            };
+            const loggerStrategy     = LoggerStrategy.LOGS;
+
+            const containerLogger = new ContainerLogger(containerId, containerInterface, firebaseLogger, firebaseLastUpdate, loggerStrategy);
+            containerLogger._logMessageToFirebase('message', true);
+            expect(pushSpy).to.have.been.calledOnce; // jshint ignore:line
+            expect(pushSpy).to.have.been.calledWith('\x1B[31mmessage\x1B[0m'); // jshint ignore:line
             expect(setSpy).to.have.been.calledOnce; // jshint ignore:line
         });
 
