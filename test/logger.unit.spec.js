@@ -280,7 +280,8 @@ describe('Logger tests', () => {
 
             const Logger = proxyquire('../lib/logger', {
                 'fs': {
-                    writeFile: writeFileSpy
+                    writeFile: writeFileSpy,
+                    existsSync: () => { return true; }
                 }
             });
 
@@ -296,7 +297,8 @@ describe('Logger tests', () => {
 
             const Logger = proxyquire('../lib/logger', {
                 'fs': {
-                    writeFile: writeFileSpy
+                    writeFile: writeFileSpy,
+                    existsSync: () => { return true; },
                 }
             });
 
