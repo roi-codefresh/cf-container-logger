@@ -7,3 +7,4 @@ coverage/*.html
 coverage
 state.json
 *.log
+.idea
