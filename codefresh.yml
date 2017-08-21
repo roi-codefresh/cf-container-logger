@@ -36,5 +36,5 @@ steps:
 
   push to registry:
     type: push
-    candidate: ${{build-step}}
+    candidate: ${{build_step}}
     tag: ${{CF_BRANCH}}
