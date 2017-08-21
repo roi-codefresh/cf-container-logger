@@ -2,14 +2,14 @@ FROM node:8.1.4-alpine
 
 WORKDIR /root/cf-runtime
 
-RUN apk add --no-cache bash git openssh-client
+RUN apk add --no-cache bash git openssh-client tini
 
 COPY package.json ./
 
 COPY yarn.lock ./
 
 # install cf-runtime required binaries
-RUN apk add --no-cache --virtual deps python make g++ tini && \
+RUN apk add --no-cache --virtual deps python make g++ && \
     yarn install --frozen-lockfile --production && \
     yarn cache clean && \
     apk del deps && \
