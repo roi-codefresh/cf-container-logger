@@ -15,9 +15,15 @@ steps:
         - npm run gulp integ_test
         - npm run gulp clean
 
-  build-step:
+  build_step:
+    title: "Building production image"
     type: build
-    image-name: codefresh/cf-container-logger
+    image_name: codefresh/cf-container-logger
+    on_success:
+      metadata:
+        set:
+          - '${{build_step.imageId}}':
+              - CF_QUALITY: true
 
   push to registry:
     type: push

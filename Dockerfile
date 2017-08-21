@@ -1,31 +1,25 @@
-FROM alpine:3.5
+FROM node:8.1.4-alpine
 
-# install node
-RUN apk add --no-cache nodejs=6.9.2-r1 tini
+WORKDIR /root/cf-runtime
 
-# set working directory
-WORKDIR /app
+RUN apk add --no-cache bash git openssh-client
 
-# copy project file
-COPY package.json .
+COPY package.json ./
 
-# Build time argument to set NODE_ENV ('production'' by default)
-ARG NODE_ENV
-ENV NODE_ENV ${NODE_ENV:-production}
+COPY yarn.lock ./
 
-# install node packages
-RUN apk add --no-cache --virtual .build-dep git && \
-    npm set progress=false && \
-    npm config set depth 0 && \
-    npm install && \
-    npm cache clean && \
-    apk del .build-dep && \
+# install cf-runtime required binaries
+RUN apk add --no-cache --virtual deps python make g++ tini && \
+    yarn install --frozen-lockfile --production && \
+    yarn cache clean && \
+    apk del deps && \
     rm -rf /tmp/*
 
-# Set tini as entrypoint
-COPY . .
+# copy app files
+COPY . ./
 
 # Set tini as entrypoint
 ENTRYPOINT ["/sbin/tini", "--"]
 
 CMD ["node",  "node_modules/.bin/forever", "--minUptime",  "1", "--spinSleepTime", "1000", "-c", "node", "lib/index.js"]
+
