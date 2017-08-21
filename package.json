@@ -31,8 +31,19 @@
     "sinon": "^1.17.4",
     "sinon-chai": "^2.8.0"
   },
+  "engines": {
+    "node": "8.1.4"
+  },
   "scripts": {
+    "lint": "gulp lint",
+    "no-onlys": "gulp no.onlys",
+    "test": "gulp unit_test",
+    "test:integration": "gulp integ_test",
+    "test:ci": "gulp unit_test && gulp coveralls && gulp clean",
+    "coveralls": "gulp coveralls",
+    "clean": "gulp clean",
+    "start": "node server/index.js",
     "gulp": "gulp",
-    "start": "node lib/index.js"
+    "eslint": "eslint"
   }
 }
