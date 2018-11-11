@@ -8,8 +8,8 @@
   "dependencies": {
     "cf-errors": "^0.1.11",
     "cf-logs": "git+https://github.com/codefresh-io/cf-logs.git#ceba4f309e52a077747a0c6bf9c3ad02e762dc4b",
-    "dockerode": "^2.3.0",
     "docker-events": "0.0.2",
+    "dockerode": "^2.3.0",
     "firebase": "git+https://github.com/codefresh-io/firebase.git#80b2ed883ff281cd67b53bd0f6a0bbd6f330fed5",
     "forever": "^0.15.3",
     "lodash": "^4.15.0",
@@ -22,6 +22,7 @@
     "gulp-env": "^0.2.0",
     "gulp-istanbul": "^0.10.4",
     "gulp-jshint": "^1.11.0",
+    "gulp-mocha": "^6.0.0",
     "gulp-mocha-co": "^0.4.1-co.3",
     "gulp-rimraf": "^0.1.1",
     "isparta": "^4.0.0",
