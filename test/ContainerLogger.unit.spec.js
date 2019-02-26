@@ -15,44 +15,6 @@ describe('Container Logger tests', () => {
 
         describe('positive', () => {
 
-            it('should separate the stdout from stderr', (done) => {
-                const containerInspect   = {
-                    Config: {
-                        Tty: true
-                    }
-                };
-                let receivedEvent;
-                const stream             = {
-                    on: (event, callback) => {
-                        if (event !== 'end') {
-                            receivedEvent = event;
-                            callback('message');
-                        }
-                    }
-                };
-                const containerId        = 'containerId';
-                const containerInterface = {
-                    inspect: (callback) => {
-                        callback(null, containerInspect);
-                    },
-                    logs: (options, callback) => {
-                        expect(options.stdout ^ options.stderr).to.be.trusty; // jshint ignore:line
-                        callback(null, stream);
-                    }
-                };
-                const firebaseLogger     = {};
-                const firebaseLastUpdate = {};
-                const firebaseMetricsLogSize = {};
-                const loggerStrategy     = LoggerStrategy.LOGS;
-
-                const containerLogger                 = new ContainerLogger({
-                    containerId, containerInterface, firebaseLogger, firebaseLastUpdate, firebaseMetricsLogSize, loggerStrategy
-                });
-                containerLogger._logMessageToFirebase = sinon.spy();
-                containerLogger.start()
-                    .done(done, done);
-            });
-
             it('should handle a send message from stderr as error', (done) => {
                 const containerInspect = {
                     Config: {
@@ -91,17 +53,18 @@ describe('Container Logger tests', () => {
                         }
                     }
                 };
-                const firebaseLogger     = {};
-                const firebaseLastUpdate = {};
+                const stepLogger = {
+                    write: sinon.spy()
+                };
                 const loggerStrategy     = LoggerStrategy.LOGS;
 
                 const containerLogger                 = new ContainerLogger({
-                    containerId, containerInterface, firebaseLogger, firebaseLastUpdate, loggerStrategy
+                    containerId, containerInterface, stepLogger, loggerStrategy
                 });
-                containerLogger._logMessageToFirebase = sinon.spy();
+                containerLogger._logMessage = sinon.spy();
                 containerLogger.start()
                     .then(() => {
-                        expect(containerLogger._logMessageToFirebase).to.have.been.calledWith('message', false); // jshint ignore:line
+                        expect(containerLogger._logMessage).to.have.been.calledWith('message', false); // jshint ignore:line
                     })
                     .done(done, done);
             });
@@ -144,19 +107,19 @@ describe('Container Logger tests', () => {
                         }
                     }
                 };
-                const firebaseLogger     = {};
-                const firebaseLastUpdate = {};
-                const firebaseMetricsLogSize = {};
+                const stepLogger = {
+                    write: sinon.spy()
+                };
                 const loggerStrategy     = LoggerStrategy.LOGS;
 
                 const containerLogger                 = new ContainerLogger({
-                    containerId, containerInterface, firebaseLogger, firebaseLastUpdate, firebaseMetricsLogSize, loggerStrategy
+                    containerId, containerInterface, stepLogger, loggerStrategy
                 });
-                containerLogger._logMessageToFirebase = sinon.spy();
+                containerLogger._logMessage = sinon.spy();
                 containerLogger.start()
                     .then(() => {
                         expect(receivedStdoutEvent).to.equal('data');
-                        expect(containerLogger._logMessageToFirebase).to.have.been.calledOnce; // jshint ignore:line
+                        expect(containerLogger._logMessage).to.have.been.calledOnce; // jshint ignore:line
                     })
                     .done(done, done);
             });
@@ -343,33 +306,20 @@ describe('Container Logger tests', () => {
             const containerId        = 'containerId';
             const containerInterface = {};
 
-            const pushSpy            = sinon.spy();
-            const setSpy             = sinon.spy();
-            const firebaseLogger     = {
-                push: pushSpy
-            };
-            const firebaseLastUpdate = {
-                set: setSpy
-            };
-            const firebaseMetricsLogs = {
-                child: sinon.spy(() => {
-                    return {
-                        set: sinon.spy()
-                    };
-                })
-            };
             const loggerStrategy     = LoggerStrategy.LOGS;
             const isWorkflowLogSizeExceeded = sinon.spy(() => {
                 return false;
             });
+            const stepLogger = {
+                write: sinon.spy()
+            };
 
             const containerLogger = new ContainerLogger({
-                containerId, containerInterface, firebaseLogger, firebaseLastUpdate, firebaseMetricsLogs, loggerStrategy, isWorkflowLogSizeExceeded
+                containerId, containerInterface, stepLogger, loggerStrategy, isWorkflowLogSizeExceeded
             });
-            containerLogger._logMessageToFirebase('message');
-            expect(pushSpy).to.have.been.calledOnce; // jshint ignore:line
-            expect(pushSpy).to.have.been.calledWith('message'); // jshint ignore:line
-            expect(setSpy).to.have.been.calledOnce; // jshint ignore:line
+            containerLogger._logMessage('message');
+            expect(stepLogger.write).to.have.been.calledOnce; // jshint ignore:line
+            expect(stepLogger.write).to.have.been.calledWith('message'); // jshint ignore:line
         });
 
         it('should log error to firebase with red decoration', () => {
@@ -377,324 +327,218 @@ describe('Container Logger tests', () => {
             const containerId        = 'containerId';
             const containerInterface = {};
 
-            const pushSpy            = sinon.spy();
-            const setSpy             = sinon.spy();
-            const firebaseLogger     = {
-                push: pushSpy
-            };
-            const firebaseLastUpdate = {
-                set: setSpy
-            };
-            const firebaseMetricsLogs = {
-                child: sinon.spy(() => {
-                    return {
-                        set: sinon.spy()
-                    };
-                })
-            };
             const loggerStrategy     = LoggerStrategy.LOGS;
             const isWorkflowLogSizeExceeded = sinon.spy(() => {
                 return false;
             });
 
+            const stepLogger = {
+                write: sinon.spy()
+            };
+
             const containerLogger = new ContainerLogger({
-                containerId, containerInterface, firebaseLogger, firebaseLastUpdate, firebaseMetricsLogs, loggerStrategy, isWorkflowLogSizeExceeded
+                containerId, containerInterface, stepLogger, loggerStrategy, isWorkflowLogSizeExceeded
             });
-            containerLogger._logMessageToFirebase('message', true);
-            expect(pushSpy).to.have.been.calledOnce; // jshint ignore:line
-            expect(pushSpy).to.have.been.calledWith('\x1B[31mmessage\x1B[0m'); // jshint ignore:line
-            expect(setSpy).to.have.been.calledOnce; // jshint ignore:line
+            containerLogger._logMessage('message', true);
+            expect(stepLogger.write).to.have.been.calledOnce; // jshint ignore:line
+            expect(stepLogger.write).to.have.been.calledWith('\x1B[31mmessage\x1B[0m'); // jshint ignore:line
         });
 
         it('should not log message to firebase in case limit of step reached', () => {
             const containerId        = 'containerId';
             const containerInterface = {};
 
-            const pushSpy            = sinon.spy();
-            const setSpy             = sinon.spy();
-            const setLogsSizeSpy     = sinon.spy();
-            const firebaseLogger     = {
-                push: pushSpy
-            };
-            const firebaseLastUpdate = {
-                set: setSpy
-            };
-            const firebaseMetricsLogs = {
-                child: sinon.spy(() => {
-                    return {
-                        set: setLogsSizeSpy
-                    };
-                })
-            };
             const loggerStrategy     = LoggerStrategy.LOGS;
             const logSizeLimit           = 1000;
             const isWorkflowLogSizeExceeded = sinon.spy(() => {
                 return false;
             });
 
+            const stepLogger = {
+                write: sinon.spy()
+            };
+
             const containerLogger = new ContainerLogger({
                 containerId,
                 containerInterface,
-                firebaseLogger,
-                firebaseLastUpdate,
-                firebaseMetricsLogs,
+                stepLogger,
                 loggerStrategy,
                 logSizeLimit,
                 isWorkflowLogSizeExceeded
             });
             containerLogger.logSize = 10001;
             containerLogger.logExceededLimitsNotified = true;
-            containerLogger._logMessageToFirebase('message');
-            expect(pushSpy).to.not.have.been.called; // jshint ignore:line
+            containerLogger._logMessage('message');
+            expect(stepLogger.write).to.not.have.been.called; // jshint ignore:line
         });
 
         it('should not log message to firebase in case limit of workflow reached and step not yet', () => {
             const containerId        = 'containerId';
             const containerInterface = {};
 
-            const pushSpy            = sinon.spy();
-            const setSpy             = sinon.spy();
-            const setLogsSizeSpy     = sinon.spy();
-            const firebaseLogger     = {
-                push: pushSpy
-            };
-            const firebaseLastUpdate = {
-                set: setSpy
-            };
-            const firebaseMetricsLogs = {
-                child: sinon.spy(() => {
-                    return {
-                        set: setLogsSizeSpy
-                    };
-                })
-            };
             const loggerStrategy     = LoggerStrategy.LOGS;
             const logSizeLimit           = 1000;
             const isWorkflowLogSizeExceeded = sinon.spy(() => {
                 return true;
             });
 
+            const stepLogger = {
+                write: sinon.spy()
+            };
+
             const containerLogger = new ContainerLogger({
                 containerId,
                 containerInterface,
-                firebaseLogger,
-                firebaseLastUpdate,
-                firebaseMetricsLogs,
+                stepLogger,
                 loggerStrategy,
                 logSizeLimit,
                 isWorkflowLogSizeExceeded
             });
             containerLogger.logSize = 900;
             containerLogger.logExceededLimitsNotified = true;
-            containerLogger._logMessageToFirebase('message');
-            expect(pushSpy).to.not.have.been.called; // jshint ignore:line
+            containerLogger._logMessage('message');
+            expect(stepLogger.write).to.not.have.been.called; // jshint ignore:line
         });
 
         it('should print warning message to user in case of reaching the limit of step', () => {
             const containerId        = 'containerId';
             const containerInterface = {};
 
-            const pushSpy            = sinon.spy();
-            const setSpy             = sinon.spy();
-            const setLogsSizeSpy     = sinon.spy();
-            const firebaseLogger     = {
-                push: pushSpy
-            };
-            const firebaseLastUpdate = {
-                set: setSpy
-            };
-            const firebaseMetricsLogs = {
-                child: sinon.spy(() => {
-                    return {
-                        set: setLogsSizeSpy
-                    };
-                })
-            };
             const loggerStrategy     = LoggerStrategy.LOGS;
             const logSizeLimit           = 1000;
             const isWorkflowLogSizeExceeded = sinon.spy(() => {
                 return false;
             });
 
+            const stepLogger = {
+                write: sinon.spy(),
+                setLogSize: sinon.spy()
+            };
+
             const containerLogger = new ContainerLogger({
                 containerId,
                 containerInterface,
-                firebaseLogger,
-                firebaseLastUpdate,
-                firebaseMetricsLogs,
+                stepLogger,
                 loggerStrategy,
                 logSizeLimit,
                 isWorkflowLogSizeExceeded
             });
             containerLogger.logSize = 10001;
-            containerLogger._logMessageToFirebase('message');
-            expect(pushSpy).to.have.been.calledWith(`\x1B[01;93mLog size exceeded for this step.\nThe step will continue to execute until it finished but new logs will not be stored.\x1B[0m\r\n`); // jshint ignore:line
+            containerLogger._logMessage('message');
+            expect(stepLogger.write).to.have.been.calledWith(`\x1B[01;93mLog size exceeded for this step.\nThe step will continue to execute until it finished but new logs will not be stored.\x1B[0m\r\n`); // jshint ignore:line
         });
 
         it('should print warning message to user in case of reaching the limit of workflow', () => {
             const containerId        = 'containerId';
             const containerInterface = {};
 
-            const pushSpy            = sinon.spy();
-            const setSpy             = sinon.spy();
-            const setLogsSizeSpy     = sinon.spy();
-            const firebaseLogger     = {
-                push: pushSpy
-            };
-            const firebaseLastUpdate = {
-                set: setSpy
-            };
-            const firebaseMetricsLogs = {
-                child: sinon.spy(() => {
-                    return {
-                        set: setLogsSizeSpy
-                    };
-                })
-            };
             const loggerStrategy     = LoggerStrategy.LOGS;
             const logSizeLimit           = 1000;
             const isWorkflowLogSizeExceeded = sinon.spy(() => {
                 return true;
             });
 
+            const stepLogger = {
+                write: sinon.spy(),
+                setLogSize: sinon.spy()
+            };
+
             const containerLogger = new ContainerLogger({
                 containerId,
                 containerInterface,
-                firebaseLogger,
-                firebaseLastUpdate,
-                firebaseMetricsLogs,
+                stepLogger,
                 loggerStrategy,
                 logSizeLimit,
                 isWorkflowLogSizeExceeded
             });
             containerLogger.logSize = 900;
-            containerLogger._logMessageToFirebase('message');
-            expect(pushSpy).to.have.been.calledWith(`\x1B[01;93mLog size exceeded for the workflow.\nThe step will continue to execute until it finished but new logs will not be stored.\x1B[0m\r\n`); // jshint ignore:line
+            containerLogger._logMessage('message');
+            expect(stepLogger.write).to.have.been.calledWith(`\x1B[01;93mLog size exceeded for the workflow.\nThe step will continue to execute until it finished but new logs will not be stored.\x1B[0m\r\n`); // jshint ignore:line
         });
 
         it('should not print the warning message more than once', () => {
             const containerId        = 'containerId';
             const containerInterface = {};
 
-            const pushSpy            = sinon.spy();
-            const setSpy             = sinon.spy();
-            const setLogsSizeSpy     = sinon.spy();
-            const firebaseLogger     = {
-                push: pushSpy
-            };
-            const firebaseLastUpdate = {
-                set: setSpy
-            };
-            const firebaseMetricsLogs = {
-                child: sinon.spy(() => {
-                    return {
-                        set: setLogsSizeSpy
-                    };
-                })
-            };
             const loggerStrategy     = LoggerStrategy.LOGS;
             const logSizeLimit           = 1000;
             const isWorkflowLogSizeExceeded = sinon.spy(() => {
                 return true;
             });
 
+            const stepLogger = {
+                write: sinon.spy(),
+                setLogSize: sinon.spy()
+            };
+
             const containerLogger = new ContainerLogger({
                 containerId,
                 containerInterface,
-                firebaseLogger,
-                firebaseLastUpdate,
-                firebaseMetricsLogs,
+                stepLogger,
                 loggerStrategy,
                 logSizeLimit,
                 isWorkflowLogSizeExceeded
             });
             containerLogger.logSize = 900;
-            containerLogger._logMessageToFirebase('message');
-            containerLogger._logMessageToFirebase('message');
-            expect(pushSpy).to.have.been.calledOnce; // jshint ignore:line
+            containerLogger._logMessage('message');
+            containerLogger._logMessage('message');
+            expect(stepLogger.write).to.have.been.calledOnce; // jshint ignore:line
         });
 
         it('should print error messages even if reached the limit', () => {
             const containerId        = 'containerId';
             const containerInterface = {};
 
-            const pushSpy            = sinon.spy();
-            const setSpy             = sinon.spy();
-            const setLogsSizeSpy     = sinon.spy();
-            const firebaseLogger     = {
-                push: pushSpy
-            };
-            const firebaseLastUpdate = {
-                set: setSpy
-            };
-            const firebaseMetricsLogs = {
-                child: sinon.spy(() => {
-                    return {
-                        set: setLogsSizeSpy
-                    };
-                })
-            };
             const loggerStrategy     = LoggerStrategy.LOGS;
             const logSizeLimit           = 1000;
             const isWorkflowLogSizeExceeded = sinon.spy(() => {
                 return false;
             });
+            const stepLogger = {
+                write: sinon.spy(),
+                setLogSize: sinon.spy()
+            };
 
             const containerLogger = new ContainerLogger({
                 containerId,
                 containerInterface,
-                firebaseLogger,
-                firebaseLastUpdate,
-                firebaseMetricsLogs,
+                stepLogger,
                 loggerStrategy,
                 logSizeLimit,
                 isWorkflowLogSizeExceeded
             });
             containerLogger.logSize = 10001;
-            containerLogger._logMessageToFirebase('message');
-            containerLogger._logMessageToFirebase('message', true);
-            expect(pushSpy).to.have.been.calledTwice; // jshint ignore:line
+            containerLogger._logMessage('message');
+            containerLogger._logMessage('message', true);
+            expect(stepLogger.write).to.have.been.calledTwice; // jshint ignore:line
         });
 
         it('should emit an event each time a log is registered', () => {
             const containerId        = 'containerId';
             const containerInterface = {};
 
-            const pushSpy            = sinon.spy();
-            const setSpy             = sinon.spy();
-            const setLogsSizeSpy     = sinon.spy();
-            const firebaseLogger     = {
-                push: pushSpy
-            };
-            const firebaseLastUpdate = {
-                set: setSpy
-            };
-            const firebaseMetricsLogs = {
-                child: sinon.spy(() => {
-                    return {
-                        set: setLogsSizeSpy
-                    };
-                })
-            };
             const loggerStrategy     = LoggerStrategy.LOGS;
             const logSizeLimit           = 1000;
             const isWorkflowLogSizeExceeded = sinon.spy(() => {
                 return false;
             });
 
+            const stepLogger = {
+                write: sinon.spy(),
+                setLogSize: sinon.spy()
+            };
+
             const containerLogger = new ContainerLogger({
                 containerId,
                 containerInterface,
-                firebaseLogger,
-                firebaseLastUpdate,
-                firebaseMetricsLogs,
+                stepLogger,
                 loggerStrategy,
                 logSizeLimit,
                 isWorkflowLogSizeExceeded
             });
             containerLogger.logSize = 900;
             containerLogger.emit = sinon.spy(containerLogger.emit);
-            containerLogger._logMessageToFirebase('message');
+            containerLogger._logMessage('message');
             expect(containerLogger.emit).to.have.been.calledOnce; // jshint ignore:line
         });
 
@@ -763,38 +607,26 @@ describe('Container Logger tests', () => {
             const containerId        = 'containerId';
             const containerInterface = {};
 
-            const pushSpy            = sinon.spy();
-            const setSpy             = sinon.spy();
-            const firebaseLogger     = {
-                push: pushSpy
-            };
-            const firebaseLastUpdate = {
-                set: setSpy
-            };
-            const firebaseMetricsLogs = {
-                child: sinon.spy(() => {
-                    return {
-                        set: sinon.spy()
-                    };
-                })
-            };
             const loggerStrategy     = LoggerStrategy.LOGS;
             const logSizeLimit           = 1000;
             const isWorkflowLogSizeExceeded = sinon.spy(() => {
                 return false;
             });
 
+            const stepLogger = {
+                write: sinon.spy(),
+                setLogSize: sinon.spy()
+            };
+
             const containerLogger = new ContainerLogger({
                 containerId,
                 containerInterface,
-                firebaseLogger,
-                firebaseLastUpdate,
-                firebaseMetricsLogs,
+                stepLogger,
                 loggerStrategy,
                 logSizeLimit,
                 isWorkflowLogSizeExceeded
             });
-            containerLogger._logMessageToFirebase('message');
+            containerLogger._logMessage('message');
             expect(containerLogger.logSize).to.equal(7);
         });
 
@@ -803,40 +635,27 @@ describe('Container Logger tests', () => {
             const containerId        = 'containerId';
             const containerInterface = {};
 
-            const pushSpy            = sinon.spy();
-            const setSpy             = sinon.spy();
-            const setLogsSizeSpy     = sinon.spy();
-            const firebaseLogger     = {
-                push: pushSpy
-            };
-            const firebaseLastUpdate = {
-                set: setSpy
-            };
-            const firebaseMetricsLogs = {
-                child: sinon.spy(() => {
-                    return {
-                        set: setLogsSizeSpy
-                    };
-                })
-            };
             const loggerStrategy     = LoggerStrategy.LOGS;
             const logSizeLimit           = 1000;
             const isWorkflowLogSizeExceeded = sinon.spy(() => {
                 return false;
             });
 
+            const stepLogger = {
+                write: sinon.spy(),
+                setLogSize: sinon.spy()
+            };
+
             const containerLogger = new ContainerLogger({
                 containerId,
                 containerInterface,
-                firebaseLogger,
-                firebaseLastUpdate,
-                firebaseMetricsLogs,
+                stepLogger,
                 loggerStrategy,
                 logSizeLimit,
                 isWorkflowLogSizeExceeded
             });
-            containerLogger._logMessageToFirebase('message');
-            expect(setLogsSizeSpy).to.have.been.calledWith(7);
+            containerLogger._logMessage('message');
+            expect(stepLogger.setLogSize).to.have.been.calledWith(7);
         });
     });
 

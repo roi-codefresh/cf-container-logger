@@ -71,104 +71,67 @@ describe('Logger tests', () => {
 
         describe('positive', () => {
 
-            it('should start and not listen for existing container in case findExistingContainers param is false', () => {
-
-                const authWithCustomTokenSpy = sinon.spy((secret, callback) => { // jshint ignore:line
-                    expect(secret).to.equal('firebaseSecret');
-                    callback();
+            it('should start and not listen for existing container in case findExistingContainers param is false', async () => { // jshint ignore:line
+                const taskLogger        = { // jshint ignore:line
+                    on: sinon.spy()
+                };
+                const TaskLoggerFactory = sinon.spy(() => {
+                    return Q.resolve(taskLogger);
                 });
 
-                const firebaseConstructorSpy = sinon.spy(() => {
-                    return {
-                        authWithCustomToken: authWithCustomTokenSpy,
-                        child(child) {
-                            if (child === 'logs') {
-                                return {
-                                    push: sinon.spy()
-                                };
-                            } else if (child === 'lastUpdate') {
-                                return {
-                                    set: sinon.spy()
-                                };
-                            }
-                        }
-                    };
-                });
                 const Logger = proxyquire('../lib/logger', {
-                    'firebase': firebaseConstructorSpy
+                    '@codefresh-io/task-logger': { TaskLogger: TaskLoggerFactory }
                 });
 
                 const loggerId               = 'loggerId';
-                const firebaseAuthUrl        = 'firebaseAuthUrl';
-                const firebaseSecret         = 'firebaseSecret';
-                const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
+                const taskLoggerConfig = {task: {}, opts: {}};
                 const findExistingContainers = false;
 
                 const logger                        = new Logger({
                     loggerId,
-                    firebaseAuthUrl,
-                    firebaseSecret,
+                    taskLoggerConfig,
                     findExistingContainers,
-                    firebaseMetricsLogsUrl
                 });
                 logger._listenForNewContainers      = sinon.spy();
                 logger._writeNewState               = sinon.spy();
                 logger._listenForExistingContainers = sinon.spy();
                 logger.start();
-                expect(firebaseConstructorSpy).to.have.been.calledWith('firebaseAuthUrl');
-                expect(firebaseConstructorSpy).to.have.been.calledWith('firebaseMetricsLogsUrl');
+
+                await Q.delay(10);
+                expect(TaskLoggerFactory).to.have.been.calledWith(taskLoggerConfig.task, taskLoggerConfig.opts);
                 expect(logger._listenForNewContainers).to.have.been.calledOnce; // jshint ignore:line
                 expect(logger._writeNewState).to.have.been.calledOnce; // jshint ignore:line
                 expect(logger._listenForExistingContainers).to.not.have.been.called; // jshint ignore:line
 
             });
 
-            it('should start and listen for existing container in case findExistingContainers param is "true"', () => {
+            it('should start and listen for existing container in case findExistingContainers param is "true"', async () => {
 
-                const authWithCustomTokenSpy = sinon.spy((secret, callback) => { // jshint ignore:line
-                    expect(secret).to.equal('firebaseSecret');
-                    callback();
+                const taskLogger        = {
+                    on: sinon.spy()
+                };
+                const TaskLoggerFactory = sinon.spy(() => {
+                    return Q.resolve(taskLogger);
                 });
 
-                const firebaseConstructorSpy = sinon.spy(() => {
-                    return {
-                        authWithCustomToken: authWithCustomTokenSpy,
-                        child(child) {
-                            if (child === 'logs') {
-                                return {
-                                    push: sinon.spy()
-                                };
-                            } else if (child === 'lastUpdate') {
-                                return {
-                                    set: sinon.spy()
-                                };
-                            }
-                        }
-                    };
-                });
                 const Logger = proxyquire('../lib/logger', {
-                    'firebase': firebaseConstructorSpy
+                    '@codefresh-io/task-logger': { TaskLogger: TaskLoggerFactory }
                 });
 
                 const loggerId               = 'loggerId';
-                const firebaseAuthUrl        = 'firebaseAuthUrl';
-                const firebaseSecret         = 'firebaseSecret';
-                const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
+                const taskLoggerConfig       = {task: {}, opts: {}};
                 const findExistingContainers = 'true';
 
                 const logger                        = new Logger({
                     loggerId,
-                    firebaseAuthUrl,
-                    firebaseSecret,
-                    findExistingContainers,
-                    firebaseMetricsLogsUrl
+                    taskLoggerConfig,
+                    findExistingContainers
                 });
                 logger._listenForNewContainers      = sinon.spy();
                 logger._writeNewState               = sinon.spy();
                 logger._listenForExistingContainers = sinon.spy();
                 logger.start();
-                expect(firebaseConstructorSpy).to.have.been.calledWith('firebaseAuthUrl');
-                expect(firebaseConstructorSpy).to.have.been.calledWith('firebaseMetricsLogsUrl');
+                await Q.delay(10);
                 expect(logger._listenForNewContainers).to.have.been.calledOnce; // jshint ignore:line
                 expect(logger._writeNewState).to.have.been.calledOnce; // jshint ignore:line
                 expect(logger._listenForExistingContainers).to.have.been.calledOnce; // jshint ignore:line
@@ -179,53 +142,37 @@ describe('Logger tests', () => {
 
         describe('negative', () => {
 
-            it('should call process exit in case authentication against firebase failed', (done) => {
+            it('should call process exit in case creation of task logger failed', (done) => {
+                let exited = false;
                 const processExitSpy = sinon.spy((exitCode) => {
+                    if (exited) {
+                        return
+                    } else {
+                        exited = true;
+                    }
                     expect(exitCode).to.equal(1);
                     done();
                 });
                 process.exit         = processExitSpy;
 
-                const authWithCustomTokenSpy = sinon.spy((secret, callback) => { // jshint ignore:line
-                    expect(secret).to.equal('firebaseSecret');
-                    callback(new Error('firebase failure'));
+                const TaskLoggerFactory = sinon.spy(() => {
+                    return Q.reject(new Error('my error'));
                 });
 
-                const firebaseConstructorSpy = sinon.spy(() => {
-                    return {
-                        authWithCustomToken: authWithCustomTokenSpy,
-                        child(child) {
-                            if (child === 'logs') {
-                                return {
-                                    push: sinon.spy()
-                                };
-                            } else if (child === 'lastUpdate') {
-                                return {
-                                    set: sinon.spy()
-                                };
-                            }
-                        }
-                    };
-                });
                 const Logger = proxyquire('../lib/logger', {
-                    'firebase': firebaseConstructorSpy
+                    '@codefresh-io/task-logger': { TaskLogger: TaskLoggerFactory }
                 });
 
                 const loggerId               = 'loggerId';
-                const firebaseAuthUrl        = 'firebaseAuthUrl';
-                const firebaseSecret         = 'firebaseSecret';
-                const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
+                const taskLoggerConfig       = {task: {}, opts: {}};
                 const findExistingContainers = false;
 
                 const logger = new Logger({
                     loggerId,
-                    firebaseAuthUrl,
-                    firebaseSecret,
+                    taskLoggerConfig,
                     findExistingContainers,
-                    firebaseMetricsLogsUrl
                 });
                 logger.start();
-
             });
 
         });
@@ -489,42 +436,42 @@ describe('Logger tests', () => {
 
                                 }
                             },
-                            'firebase': function () {
-                                return {};
-                            },
                             './ContainerLogger': ContainerLoggerSpy
                         });
 
                         const loggerId               = 'loggerId';
-                        const firebaseAuthUrl        = 'firebaseAuthUrl';
-                        const firebaseSecret         = 'firebaseSecret';
-                        const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
                         const findExistingContainers = false;
                         const logger                 = new Logger({
-                            loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
+                            loggerId, findExistingContainers
                         });
                         logger._writeNewState        = sinon.spy();
+                        logger.taskLogger = {
+                            on: sinon.spy(),
+                            create: function () {
+                                return {
+                                    restore: sinon.spy(() => Q.resolve())
+                                }
+                            }
+                        };
                         const container              = {
                             Id: 'containerId',
                             Status: ContainerStatus.CREATE,
                             Labels: {
                                 'io.codefresh.logger.id': 'loggerId',
-                                'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                                'io.codefresh.logger.stepName': 'name',
                                 'io.codefresh.logger.strategy': LoggerStrategy.ATTACH,
-                                'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl',
-                                'io.codefresh.logger.firebase.metricsLogs': 'metricsLogs',
                             }
                         };
                         logger._handleContainer(container);
-                        expect(startSpy).to.have.been.calledOnce; // jshint ignore:line
 
                         setTimeout(() => {
+                            expect(startSpy).to.have.been.calledOnce; // jshint ignore:line
                             expect(logger._writeNewState).to.have.been.calledOnce; // jshint ignore:line
                             done();
                         }, 10);
                     });
 
-                    it('should pass received step log size limit to ContainerLogger', () => {
+                    it('should pass received step log size limit to ContainerLogger', async () => {
                         const infoSpy  = sinon.spy();
                         const errorSpy = sinon.spy();
                         const Logger   = proxyquire('../lib/logger', {
@@ -543,31 +490,35 @@ describe('Logger tests', () => {
                         });
 
                         const loggerId               = 'loggerId';
-                        const firebaseAuthUrl        = 'firebaseAuthUrl';
-                        const firebaseSecret         = 'firebaseSecret';
-                        const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
                         const findExistingContainers = false;
                         const logger                 = new Logger({
-                            loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
+                            loggerId, findExistingContainers
                         });
                         logger._writeNewState        = sinon.spy();
+                        logger.taskLogger = {
+                            on: sinon.spy(),
+                            create: function () {
+                                return {
+                                    restore: sinon.spy(() => Q.resolve())
+                                }
+                            }
+                        };
                         const container              = {
                             Id: 'containerId',
                             Status: ContainerStatus.CREATE,
                             Labels: {
                                 'io.codefresh.logger.id': 'loggerId',
-                                'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                                'io.codefresh.logger.stepName': 'name',
                                 'io.codefresh.logger.strategy': LoggerStrategy.ATTACH,
-                                'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl',
-                                'io.codefresh.logger.firebase.metricsLogs': 'metricsLogs',
                                 'io.codefresh.logger.logSizeLimit': '20',
                             }
                         };
                         logger._handleContainer(container);
+                        await Q.delay(10);
                         expect(logger.containerLoggers[0].logSizeLimit).to.equal(20000000);
                     });
 
-                    it('should pass undefined step log size limit to ContainerLogger in case of no label', () => {
+                    it('should pass undefined step log size limit to ContainerLogger in case of no label', async () => {
                         const infoSpy  = sinon.spy();
                         const errorSpy = sinon.spy();
                         const Logger   = proxyquire('../lib/logger', {
@@ -579,37 +530,38 @@ describe('Logger tests', () => {
                                     };
 
                                 }
-                            },
-                            'firebase': function () {
-                                return {};
                             }
                         });
 
                         const loggerId               = 'loggerId';
-                        const firebaseAuthUrl        = 'firebaseAuthUrl';
-                        const firebaseSecret         = 'firebaseSecret';
-                        const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
                         const findExistingContainers = false;
                         const logger                 = new Logger({
-                            loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
+                            loggerId, findExistingContainers
                         });
                         logger._writeNewState        = sinon.spy();
+                        logger.taskLogger = {
+                            on: sinon.spy(),
+                            create: function () {
+                                return {
+                                    restore: sinon.spy(() => Q.resolve())
+                                }
+                            }
+                        };
                         const container              = {
                             Id: 'containerId',
                             Status: ContainerStatus.CREATE,
                             Labels: {
                                 'io.codefresh.logger.id': 'loggerId',
-                                'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                                'io.codefresh.logger.stepName': 'name',
                                 'io.codefresh.logger.strategy': LoggerStrategy.ATTACH,
-                                'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl',
-                                'io.codefresh.logger.firebase.metricsLogs': 'metricsLogs',
                             }
                         };
                         logger._handleContainer(container);
+                        await Q.delay(10);
                         expect(logger.containerLoggers[0].logSizeLimit).to.equal(undefined);
                     });
 
-                    it('should update total log size when new log message event was sent', () => {
+                    it('should update total log size when new log message event was sent', async () => {
                         const infoSpy  = sinon.spy();
                         const errorSpy = sinon.spy();
                         const Logger   = proxyquire('../lib/logger', {
@@ -628,21 +580,19 @@ describe('Logger tests', () => {
                         });
 
                         const loggerId               = 'loggerId';
-                        const firebaseAuthUrl        = 'firebaseAuthUrl';
-                        const firebaseSecret         = 'firebaseSecret';
-                        const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
                         const findExistingContainers = false;
                         const logger                 = new Logger({
-                            loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
+                            loggerId, findExistingContainers
                         });
                         logger._writeNewState        = sinon.spy();
-                        const setSpy = sinon.spy();
-                        logger.firebaseMetricsLogs = {
-                            child: () => {
+                        logger.taskLogger = {
+                            on: sinon.spy(),
+                            create: function () {
                                 return {
-                                    set: setSpy
-                                };
-                            }
+                                    restore: sinon.spy(() => Q.resolve())
+                                }
+                            },
+                            setLogSize: sinon.spy()
                         };
 
                         const container              = {
@@ -650,25 +600,24 @@ describe('Logger tests', () => {
                             Status: ContainerStatus.CREATE,
                             Labels: {
                                 'io.codefresh.logger.id': 'loggerId',
-                                'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                                'io.codefresh.logger.stepName': 'name',
                                 'io.codefresh.logger.strategy': LoggerStrategy.ATTACH,
-                                'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl',
-                                'io.codefresh.logger.firebase.metricsLogs': 'metricsLogs',
                             }
                         };
                         logger._handleContainer(container);
+                        await Q.delay(10);
                         expect(logger.logSize).to.equal(0);
                         logger.containerLoggers[0].logSize = 1000;
                         logger.containerLoggers[0].emit('message.logged');
                         expect(logger.logSize).to.equal(1000);
-                        expect(setSpy).to.have.been.calledWith(1000);
+                        expect(logger.taskLogger.setLogSize).to.have.been.calledWith(1000);
                     });
 
                 });
 
                 describe('should print an error in case firebase ref fails', () => {
 
-                    it('error while create firebase logger ref', () => {
+                    it('error while create firebase logger ref', async () => {
                         const startSpy = sinon.spy(() => {
                             return Q.resolve();
                         });
@@ -682,69 +631,6 @@ describe('Logger tests', () => {
                                         error: errorSpy
                                     };
 
-                                }
-                            },
-                            'firebase': function () {
-                                throw new Error('firebase error');
-                            },
-                            './ContainerLogger': function () {
-                                const emitter = new EventEmitter();
-                                emitter.start = startSpy;
-                                return emitter;
-                            }
-                        });
-
-                        const loggerId               = 'loggerId';
-                        const firebaseAuthUrl        = 'firebaseAuthUrl';
-                        const firebaseSecret         = 'firebaseSecret';
-                        const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
-                        const findExistingContainers = false;
-                        const logger                 = new Logger({
-                            loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
-                        });
-                        logger._writeNewState        = sinon.spy();
-                        const container              = {
-                            Id: 'containerId',
-                            Status: ContainerStatus.CREATE,
-                            Labels: {
-                                'io.codefresh.logger.id': 'loggerId',
-                                'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
-                                'io.codefresh.logger.strategy': LoggerStrategy.ATTACH,
-                                'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl',
-                                'io.codefresh.logger.firebase.metricsLogs': 'metricsLogs',
-                            }
-                        };
-                        logger._handleContainer(container);
-                        expect(errorSpy).to.have.been.calledOnce; // jshint ignore:line
-                        expect(errorSpy)
-                            .to
-                            .have
-                            .been
-                            .calledWith('Error: Failed to create a new firebase logger ref; caused by Error: firebase error'); // jshint ignore:line
-
-                    });
-
-                    it('error while create firebase lastUpdate ref', () => {
-                        const startSpy = sinon.spy(() => {
-                            return Q.resolve();
-                        });
-                        const infoSpy  = sinon.spy();
-                        const errorSpy = sinon.spy();
-                        const Logger   = proxyquire('../lib/logger', {
-                            'cf-logs': {
-                                Logger: () => {
-                                    return {
-                                        info: infoSpy,
-                                        error: errorSpy
-                                    };
-
-                                }
-                            },
-                            'firebase': function (url) {
-                                if (url === 'firebaseUrl') {
-                                    return;
-                                } else if (url === 'lastUpdateUrl') {
-                                    throw new Error('firebase error');
                                 }
                             },
                             './ContainerLogger': function () {
@@ -763,27 +649,34 @@ describe('Logger tests', () => {
                             loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
                         });
                         logger._writeNewState        = sinon.spy();
+                        logger.taskLogger = {
+                            on: sinon.spy(),
+                            create: function () {
+                                return {
+                                    restore: sinon.spy(() => Q.reject(new Error('my error')))
+                                }
+                            },
+                            setLogSize: sinon.spy()
+                        };
                         const container              = {
                             Id: 'containerId',
                             Status: ContainerStatus.CREATE,
                             Labels: {
                                 'io.codefresh.logger.id': 'loggerId',
-                                'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                                'io.codefresh.logger.stepName': 'name',
                                 'io.codefresh.logger.strategy': LoggerStrategy.ATTACH,
-                                'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl',
-                                'io.codefresh.logger.firebase.metricsLogs': 'metricsLogs',
                             }
                         };
                         logger._handleContainer(container);
+                        await Q.delay(10);
                         expect(errorSpy).to.have.been.calledOnce; // jshint ignore:line
                         expect(errorSpy)
                             .to
                             .have
                             .been
-                            .calledWith('Error: Failed to create a new firebase lastUpdate ref; caused by Error: firebase error'); // jshint ignore:line
+                            .calledWith('Error: Failed to restore step; caused by Error: my error'); // jshint ignore:line
 
                     });
-
 
                     it('error while starting the container logger instance', (done) => {
                         const startSpy = sinon.spy(() => {
@@ -812,23 +705,27 @@ describe('Logger tests', () => {
                         });
 
                         const loggerId               = 'loggerId';
-                        const firebaseAuthUrl        = 'firebaseAuthUrl';
-                        const firebaseSecret         = 'firebaseSecret';
-                        const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
                         const findExistingContainers = false;
                         const logger                 = new Logger({
-                            loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
+                            loggerId, findExistingContainers
                         });
                         logger._writeNewState        = sinon.spy();
+                        logger.taskLogger = {
+                            on: sinon.spy(),
+                            create: function () {
+                                return {
+                                    restore: sinon.spy(() => Q.resolve())
+                                }
+                            },
+                            setLogSize: sinon.spy()
+                        };
                         const container              = {
                             Id: 'containerId',
                             Status: ContainerStatus.CREATE,
                             Labels: {
                                 'io.codefresh.logger.id': 'loggerId',
-                                'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                                'io.codefresh.logger.stepName': 'name',
                                 'io.codefresh.logger.strategy': LoggerStrategy.ATTACH,
-                                'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl',
-                                'io.codefresh.logger.firebase.metricsLogs': 'metricsLogs',
                             }
                         };
                         logger._handleContainer(container);
@@ -954,18 +851,14 @@ describe('Logger tests', () => {
                 });
 
                 const loggerId               = 'loggerId';
-                const firebaseAuthUrl        = 'firebaseAuthUrl';
-                const firebaseSecret         = 'firebaseSecret';
-                const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
                 const findExistingContainers = false;
                 const logger                 = new Logger({
-                    loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
+                    loggerId, findExistingContainers
                 });
                 const container              = {
                     Status: ContainerStatus.CREATE,
                     Labels: {
                         'io.codefresh.logger.id': 'loggerId',
-                        'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
                         'io.codefresh.logger.strategy': LoggerStrategy.LOGS
                     }
                 };
@@ -991,18 +884,14 @@ describe('Logger tests', () => {
                 });
 
                 const loggerId               = 'loggerId';
-                const firebaseAuthUrl        = 'firebaseAuthUrl';
-                const firebaseSecret         = 'firebaseSecret';
-                const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
                 const findExistingContainers = false;
                 const logger                 = new Logger({
-                    loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
+                    loggerId, findExistingContainers
                 });
                 const container              = {
                     Id: 'containerId',
                     Labels: {
                         'io.codefresh.logger.id': 'loggerId',
-                        'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
                         'io.codefresh.logger.strategy': LoggerStrategy.LOGS
                     }
                 };
@@ -1012,7 +901,7 @@ describe('Logger tests', () => {
 
             });
 
-            it('logger id provided but no firebase url', () => {
+            it('no step name', () => {
                 const infoSpy  = sinon.spy();
                 const errorSpy = sinon.spy();
                 const Logger   = proxyquire('../lib/logger', {
@@ -1028,102 +917,20 @@ describe('Logger tests', () => {
                 });
 
                 const loggerId               = 'loggerId';
-                const firebaseAuthUrl        = 'firebaseAuthUrl';
-                const firebaseSecret         = 'firebaseSecret';
-                const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
                 const findExistingContainers = false;
                 const logger                 = new Logger({
-                    loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
+                    loggerId, findExistingContainers
                 });
                 const container              = {
                     Id: 'containerId',
                     Status: ContainerStatus.CREATE,
                     Labels: {
                         'io.codefresh.logger.id': 'loggerId',
-                        'io.codefresh.logger.strategy': LoggerStrategy.LOGS
                     }
                 };
                 logger._handleContainer(container);
                 expect(errorSpy).to.have.been.calledOnce; // jshint ignore:line
-                expect(errorSpy).to.have.been.calledWith('Container: containerId does contain a firebaseUrl label');
-
-            });
-
-            it('logger id provided but no firebase lastUpdate url', () => {
-                const infoSpy  = sinon.spy();
-                const errorSpy = sinon.spy();
-                const Logger   = proxyquire('../lib/logger', {
-                    'cf-logs': {
-                        Logger: () => {
-                            return {
-                                info: infoSpy,
-                                error: errorSpy
-                            };
-
-                        }
-                    }
-                });
-
-                const loggerId               = 'loggerId';
-                const firebaseAuthUrl        = 'firebaseAuthUrl';
-                const firebaseSecret         = 'firebaseSecret';
-                const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
-                const findExistingContainers = false;
-                const logger                 = new Logger({
-                    loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
-                });
-                const container              = {
-                    Id: 'containerId',
-                    Status: ContainerStatus.CREATE,
-                    Labels: {
-                        'io.codefresh.logger.id': 'loggerId',
-                        'io.codefresh.logger.firebase.logsUrl': 'logsUrl',
-                        'io.codefresh.logger.firebase.metricsLogs': 'metricsLogs',
-                        'io.codefresh.logger.strategy': LoggerStrategy.LOGS
-                    }
-                };
-                logger._handleContainer(container);
-                expect(errorSpy).to.have.been.calledOnce; // jshint ignore:line
-                expect(errorSpy).to.have.been.calledWith('Container: containerId does contain a loggerFirebaseLastUpdateUrl label');
-
-            });
-
-            it('logger id provided but no firebase metricsLogs url', () => {
-                const infoSpy  = sinon.spy();
-                const errorSpy = sinon.spy();
-                const Logger   = proxyquire('../lib/logger', {
-                    'cf-logs': {
-                        Logger: () => {
-                            return {
-                                info: infoSpy,
-                                error: errorSpy
-                            };
-
-                        }
-                    }
-                });
-
-                const loggerId               = 'loggerId';
-                const firebaseAuthUrl        = 'firebaseAuthUrl';
-                const firebaseSecret         = 'firebaseSecret';
-                const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
-                const findExistingContainers = false;
-                const logger                 = new Logger({
-                    loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
-                });
-                const container              = {
-                    Id: 'containerId',
-                    Status: ContainerStatus.CREATE,
-                    Labels: {
-                        'io.codefresh.logger.id': 'loggerId',
-                        'io.codefresh.logger.firebase.logsUrl': 'logsUrl',
-                        'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl',
-                        'io.codefresh.logger.strategy': LoggerStrategy.LOGS
-                    }
-                };
-                logger._handleContainer(container);
-                expect(errorSpy).to.have.been.calledOnce; // jshint ignore:line
-                expect(errorSpy).to.have.been.calledWith('Container: containerId does contain a loggerFirebaseMetricsLogsUrl label');
+                expect(errorSpy).to.have.been.calledWith('Container: containerId does not contain a stepName label');
 
             });
 
@@ -1143,26 +950,21 @@ describe('Logger tests', () => {
                 });
 
                 const loggerId               = 'loggerId';
-                const firebaseAuthUrl        = 'firebaseAuthUrl';
-                const firebaseSecret         = 'firebaseSecret';
-                const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
                 const findExistingContainers = false;
                 const logger                 = new Logger({
-                    loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
+                    loggerId, findExistingContainers
                 });
                 const container              = {
                     Id: 'containerId',
                     Status: ContainerStatus.CREATE,
                     Labels: {
                         'io.codefresh.logger.id': 'loggerId',
-                        'io.codefresh.logger.firebase.logsUrl': 'loggerFirebaseUrl',
-                        'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl',
-                        'io.codefresh.logger.firebase.metricsLogs': 'metricsLogs',
+                        'io.codefresh.logger.stepName': 'name',
                     }
                 };
                 logger._handleContainer(container);
                 expect(errorSpy).to.have.been.calledOnce; // jshint ignore:line
-                expect(errorSpy).to.have.been.calledWith('Container: containerId does contain a loggerStrategy label');
+                expect(errorSpy).to.have.been.calledWith('Container: containerId does not contain a loggerStrategy label');
 
             });
 
@@ -1182,22 +984,17 @@ describe('Logger tests', () => {
                 });
 
                 const loggerId               = 'loggerId';
-                const firebaseAuthUrl        = 'firebaseAuthUrl';
-                const firebaseSecret         = 'firebaseSecret';
-                const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
                 const findExistingContainers = false;
                 const logger                 = new Logger({
-                    loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
+                    loggerId, findExistingContainers
                 });
                 const container              = {
                     Id: 'containerId',
                     Status: ContainerStatus.CREATE,
                     Labels: {
                         'io.codefresh.logger.id': 'loggerId',
-                        'io.codefresh.logger.firebase.logsUrl': 'loggerFirebaseUrl',
+                        'io.codefresh.logger.stepName': 'name',
                         'io.codefresh.logger.strategy': 'non-existing-strategy',
-                        'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl',
-                        'io.codefresh.logger.firebase.metricsLogs': 'metricsLogs',
                     }
                 };
                 logger._handleContainer(container);
@@ -1222,22 +1019,17 @@ describe('Logger tests', () => {
                 });
 
                 const loggerId               = 'loggerId';
-                const firebaseAuthUrl        = 'firebaseAuthUrl';
-                const firebaseSecret         = 'firebaseSecret';
-                const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
                 const findExistingContainers = false;
                 const logger                 = new Logger({
-                    loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
+                    loggerId, findExistingContainers
                 });
                 const container              = {
                     Id: 'containerId',
                     Status: ContainerStatus.CREATE,
                     Labels: {
                         'io.codefresh.logger.id': 'loggerId',
-                        'io.codefresh.logger.firebase.logsUrl': 'loggerFirebaseUrl',
+                        'io.codefresh.logger.stepName': 'name',
                         'io.codefresh.logger.strategy': LoggerStrategy.LOGS,
-                        'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl',
-                        'io.codefresh.logger.firebase.metricsLogs': 'metricsLogs',
                     }
                 };
                 logger._handleContainer(container);
@@ -1257,7 +1049,7 @@ describe('Logger tests', () => {
 
     describe('log limit exceeded', () => {
 
-        it('should return true in case log limit exceeded', () => {
+        it('should return true in case log limit exceeded', async () => {
             const infoSpy  = sinon.spy();
             const errorSpy = sinon.spy();
             const Logger   = proxyquire('../lib/logger', {
@@ -1269,28 +1061,24 @@ describe('Logger tests', () => {
                         };
 
                     }
-                },
-                'firebase': function () {
-                    return {};
                 }
             });
 
             const loggerId               = 'loggerId';
-            const firebaseAuthUrl        = 'firebaseAuthUrl';
-            const firebaseSecret         = 'firebaseSecret';
-            const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
             const findExistingContainers = false;
             const logger                 = new Logger({
-                loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
+                loggerId, findExistingContainers
             });
             logger._writeNewState        = sinon.spy();
-            const setSpy = sinon.spy();
-            logger.firebaseMetricsLogs = {
-                child: () => {
+
+            logger.taskLogger = {
+                on: sinon.spy(),
+                create: function () {
                     return {
-                        set: setSpy
-                    };
-                }
+                        restore: sinon.spy(() => Q.resolve())
+                    }
+                },
+                setLogSize: sinon.spy()
             };
 
             const container              = {
@@ -1298,19 +1086,18 @@ describe('Logger tests', () => {
                 Status: ContainerStatus.CREATE,
                 Labels: {
                     'io.codefresh.logger.id': 'loggerId',
-                    'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                    'io.codefresh.logger.stepName': 'name',
                     'io.codefresh.logger.strategy': LoggerStrategy.ATTACH,
-                    'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl',
-                    'io.codefresh.logger.firebase.metricsLogs': 'metricsLogs'
                 }
             };
             logger.logSizeLimit = 100;
             logger._handleContainer(container);
+            await Q.delay(10);
             logger.containerLoggers[0].logSize = logger.logSizeLimit + 1;
             expect(logger.logLimitExceeded()).to.equal(true);
         });
 
-        it('should return false in case log limit not exceeded', () => {
+        it('should return false in case log limit not exceeded', async () => {
             const infoSpy  = sinon.spy();
             const errorSpy = sinon.spy();
             const Logger   = proxyquire('../lib/logger', {
@@ -1322,19 +1109,13 @@ describe('Logger tests', () => {
                         };
 
                     }
-                },
-                'firebase': function () {
-                    return {};
                 }
             });
 
             const loggerId               = 'loggerId';
-            const firebaseAuthUrl        = 'firebaseAuthUrl';
-            const firebaseSecret         = 'firebaseSecret';
-            const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
             const findExistingContainers = false;
             const logger                 = new Logger({
-                loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
+                loggerId, findExistingContainers
             });
             logger._writeNewState        = sinon.spy();
             const setSpy = sinon.spy();
@@ -1346,24 +1127,33 @@ describe('Logger tests', () => {
                 }
             };
 
+            logger.taskLogger = {
+                on: sinon.spy(),
+                create: function () {
+                    return {
+                        restore: sinon.spy(() => Q.resolve())
+                    }
+                },
+                setLogSize: sinon.spy()
+            };
+
             const container              = {
                 Id: 'containerId',
                 Status: ContainerStatus.CREATE,
                 Labels: {
                     'io.codefresh.logger.id': 'loggerId',
-                    'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                    'io.codefresh.logger.stepName': 'name',
                     'io.codefresh.logger.strategy': LoggerStrategy.ATTACH,
-                    'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl',
-                    'io.codefresh.logger.firebase.metricsLogs': 'metricsLogs',
                 }
             };
             logger.logSizeLimit = 11;
             logger._handleContainer(container);
+            await Q.delay(10);
             logger.containerLoggers[0].logSize = 10;
             expect(logger.logLimitExceeded()).to.equal(false);
         });
 
-        it('should return false in case log limit was not defined', () => {
+        it('should return false in case log limit was not defined', async () => {
             const infoSpy  = sinon.spy();
             const errorSpy = sinon.spy();
             const Logger   = proxyquire('../lib/logger', {
@@ -1375,28 +1165,24 @@ describe('Logger tests', () => {
                         };
 
                     }
-                },
-                'firebase': function () {
-                    return {};
                 }
             });
 
             const loggerId               = 'loggerId';
-            const firebaseAuthUrl        = 'firebaseAuthUrl';
-            const firebaseSecret         = 'firebaseSecret';
-            const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
             const findExistingContainers = false;
             const logger                 = new Logger({
-                loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
+                loggerId, findExistingContainers
             });
             logger._writeNewState        = sinon.spy();
-            const setSpy = sinon.spy();
-            logger.firebaseMetricsLogs = {
-                child: () => {
+
+            logger.taskLogger = {
+                on: sinon.spy(),
+                create: function () {
                     return {
-                        set: setSpy
-                    };
-                }
+                        restore: sinon.spy(() => Q.resolve())
+                    }
+                },
+                setLogSize: sinon.spy()
             };
 
             const container              = {
@@ -1404,13 +1190,12 @@ describe('Logger tests', () => {
                 Status: ContainerStatus.CREATE,
                 Labels: {
                     'io.codefresh.logger.id': 'loggerId',
-                    'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                    'io.codefresh.logger.stepName': 'name',
                     'io.codefresh.logger.strategy': LoggerStrategy.ATTACH,
-                    'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl',
-                    'io.codefresh.logger.firebase.metricsLogs': 'metricsLogs',
                 }
             };
             logger._handleContainer(container);
+            await Q.delay(10);
             logger.containerLoggers[0].logSize = 10;
             expect(logger.logLimitExceeded()).to.equal(undefined);
         });
@@ -1419,7 +1204,7 @@ describe('Logger tests', () => {
 
     describe('total log size', () => {
 
-        it('should return true in case log limit exceeded for one container logger', () => {
+        it('should return true in case log limit exceeded for one container logger', async () => {
             const infoSpy  = sinon.spy();
             const errorSpy = sinon.spy();
             const Logger   = proxyquire('../lib/logger', {
@@ -1431,28 +1216,23 @@ describe('Logger tests', () => {
                         };
 
                     }
-                },
-                'firebase': function () {
-                    return {};
                 }
             });
 
             const loggerId               = 'loggerId';
-            const firebaseAuthUrl        = 'firebaseAuthUrl';
-            const firebaseSecret         = 'firebaseSecret';
-            const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
             const findExistingContainers = false;
             const logger                 = new Logger({
-                loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
+                loggerId, findExistingContainers
             });
             logger._writeNewState        = sinon.spy();
-            const setSpy = sinon.spy();
-            logger.firebaseMetricsLogs = {
-                child: () => {
+            logger.taskLogger = {
+                on: sinon.spy(),
+                create: function () {
                     return {
-                        set: setSpy
-                    };
-                }
+                        restore: sinon.spy(() => Q.resolve())
+                    }
+                },
+                setLogSize: sinon.spy()
             };
 
             const container              = {
@@ -1460,18 +1240,17 @@ describe('Logger tests', () => {
                 Status: ContainerStatus.CREATE,
                 Labels: {
                     'io.codefresh.logger.id': 'loggerId',
-                    'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                    'io.codefresh.logger.stepName': 'name',
                     'io.codefresh.logger.strategy': LoggerStrategy.ATTACH,
-                    'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl',
-                    'io.codefresh.logger.firebase.metricsLogs': 'metricsLogs',
                 }
             };
             logger._handleContainer(container);
+            await Q.delay(10);
             logger.containerLoggers[0].logSize = 1000;
             expect(logger._getTotalLogSize()).to.equal(1000);
         });
 
-        it('should return true in case log limit exceeded for two container loggers', () => {
+        it('should return true in case log limit exceeded for two container loggers', async () => {
             const infoSpy  = sinon.spy();
             const errorSpy = sinon.spy();
             const ContainerLoggerSpy = sinon.spy(() => {
@@ -1489,28 +1268,23 @@ describe('Logger tests', () => {
 
                     }
                 },
-                'firebase': function () {
-                    return {};
-                },
                 './ContainerLogger': ContainerLoggerSpy
             });
 
             const loggerId               = 'loggerId';
-            const firebaseAuthUrl        = 'firebaseAuthUrl';
-            const firebaseSecret         = 'firebaseSecret';
-            const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
             const findExistingContainers = false;
             const logger                 = new Logger({
-                loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
+                loggerId, findExistingContainers
             });
             logger._writeNewState        = sinon.spy();
-            const setSpy = sinon.spy();
-            logger.firebaseMetricsLogs = {
-                child: () => {
+            logger.taskLogger = {
+                on: sinon.spy(),
+                create: function () {
                     return {
-                        set: setSpy
-                    };
-                }
+                        restore: sinon.spy(() => Q.resolve())
+                    }
+                },
+                setLogSize: sinon.spy()
             };
 
             const container              = {
@@ -1518,15 +1292,14 @@ describe('Logger tests', () => {
                 Status: ContainerStatus.CREATE,
                 Labels: {
                     'io.codefresh.logger.id': 'loggerId',
-                    'io.codefresh.logger.firebase.logsUrl': 'firebaseUrl',
+                    'io.codefresh.logger.stepName': 'name',
                     'io.codefresh.logger.strategy': LoggerStrategy.ATTACH,
-                    'io.codefresh.logger.firebase.lastUpdateUrl': 'lastUpdateUrl',
-                    'io.codefresh.logger.firebase.metricsLogs': 'metricsLogs',
                 }
             };
             logger._handleContainer(container);
             container.Id = 'newid';
             logger._handleContainer(container);
+            await Q.delay(10);
             logger.containerLoggers[0].logSize = 1000;
             logger.containerLoggers[1].logSize = 1000;
             expect(logger._getTotalLogSize()).to.equal(2000);
