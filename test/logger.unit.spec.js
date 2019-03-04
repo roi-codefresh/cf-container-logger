@@ -617,7 +617,7 @@ describe('Logger tests', () => {
 
                 describe('should print an error in case firebase ref fails', () => {
 
-                    it.skip('error while create firebase logger ref', async () => {
+                    it('error while create firebase logger ref', async () => {
                         const startSpy = sinon.spy(() => {
                             return Q.resolve();
                         });
