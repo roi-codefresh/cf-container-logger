@@ -552,11 +552,13 @@ cf-errors@^0.1.11:
   dependencies:
     lodash "4.15.0"
 
-"cf-logs@git+https://github.com/codefresh-io/cf-logs.git#ceba4f309e52a077747a0c6bf9c3ad02e762dc4b":
-  version "0.0.3"
-  resolved "git+https://github.com/codefresh-io/cf-logs.git#ceba4f309e52a077747a0c6bf9c3ad02e762dc4b"
+cf-logs@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/cf-logs/-/cf-logs-1.1.0.tgz#2ea2dae43c71a2a06579b82a287a4d91a86db3f5"
+  integrity sha512-dUcIw2K6PjHouhaiTbJTSN2iPoja+diS0vTcv3+ENcq9o1Ow2AziYAWqYW0MtUJxrdKDiowyZxIQvJ54cCBPTA==
   dependencies:
     lodash "^3.10.1"
+    q "^1.5.1"
     winston "2.1.1"
     winston-loggly "1.2.0"
 
@@ -3592,6 +3594,11 @@ punycode@^2.1.0:
 q@^1.4.1:
   version "1.5.0"
   resolved "https://registry.yarnpkg.com/q/-/q-1.5.0.tgz#dd01bac9d06d30e6f219aecb8253ee9ebdc308f1"
+
+q@^1.5.1:
+  version "1.5.1"
+  resolved "https://registry.yarnpkg.com/q/-/q-1.5.1.tgz#7e32f75b41381291d04611f1bf14109ac00651d7"
+  integrity sha1-fjL3W0E4EpHQRhHxvxQQmsAGUdc=
 
 qs@~5.2.0:
   version "5.2.1"
