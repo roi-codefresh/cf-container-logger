@@ -73,7 +73,8 @@ describe('Logger tests', () => {
 
             it('should start and not listen for existing container in case findExistingContainers param is false', async () => { // jshint ignore:line
                 const taskLogger        = { // jshint ignore:line
-                    on: sinon.spy()
+                    on: sinon.spy(),
+                    restore: sinon.spy(() => Q.resolve())
                 };
                 const TaskLoggerFactory = sinon.spy(() => {
                     return Q.resolve(taskLogger);
@@ -108,7 +109,8 @@ describe('Logger tests', () => {
             it('should start and listen for existing container in case findExistingContainers param is "true"', async () => {
 
                 const taskLogger        = {
-                    on: sinon.spy()
+                    on: sinon.spy(),
+                    restore: sinon.spy(() => Q.resolve())
                 };
                 const TaskLoggerFactory = sinon.spy(() => {
                     return Q.resolve(taskLogger);
@@ -616,67 +618,6 @@ describe('Logger tests', () => {
                 });
 
                 describe('should print an error in case firebase ref fails', () => {
-
-                    it('error while create firebase logger ref', async () => {
-                        const startSpy = sinon.spy(() => {
-                            return Q.resolve();
-                        });
-                        const infoSpy  = sinon.spy();
-                        const errorSpy = sinon.spy();
-                        const Logger   = proxyquire('../lib/logger', {
-                            'cf-logs': {
-                                Logger: () => {
-                                    return {
-                                        info: infoSpy,
-                                        error: errorSpy
-                                    };
-
-                                }
-                            },
-                            './ContainerLogger': function () {
-                                const emitter = new EventEmitter();
-                                emitter.start = startSpy;
-                                return emitter;
-                            }
-                        });
-
-                        const loggerId               = 'loggerId';
-                        const firebaseAuthUrl        = 'firebaseAuthUrl';
-                        const firebaseSecret         = 'firebaseSecret';
-                        const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
-                        const findExistingContainers = false;
-                        const logger                 = new Logger({
-                            loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
-                        });
-                        logger._writeNewState        = sinon.spy();
-                        logger.taskLogger = {
-                            on: sinon.spy(),
-                            create: function () {
-                                return {
-                                    restore: sinon.spy(() => Q.reject(new Error('my error')))
-                                }
-                            },
-                            setLogSize: sinon.spy()
-                        };
-                        const container              = {
-                            Id: 'containerId',
-                            Status: ContainerStatus.CREATE,
-                            Labels: {
-                                'io.codefresh.logger.id': 'loggerId',
-                                'io.codefresh.logger.stepName': 'name',
-                                'io.codefresh.logger.strategy': LoggerStrategy.ATTACH,
-                            }
-                        };
-                        logger._handleContainer(container);
-                        await Q.delay(10);
-                        expect(errorSpy).to.have.been.calledOnce; // jshint ignore:line
-                        expect(errorSpy)
-                            .to
-                            .have
-                            .been
-                            .calledWith('Error: Failed to restore step; caused by Error: my error'); // jshint ignore:line
-
-                    });
 
                     it('error while starting the container logger instance', (done) => {
                         const startSpy = sinon.spy(() => {
