@@ -2,11 +2,10 @@
 # yarn lockfile v1
 
 
-
-"@codefresh-io/task-logger@^0.0.16":
-  version "0.0.16"
-  resolved "https://registry.yarnpkg.com/@codefresh-io/task-logger/-/task-logger-0.0.16.tgz#1d59bd195e0437141a9fd59a0a063d2c3cd07b0e"
-  integrity sha512-9lI07hi/4C9mVZiTrQPMt5V47NHYxkYOupoMmcJ2iSLQueKxpPrsicQNoX2wcSm1DSvUvrHW0Ntw81r7mL6oDg==
+"@codefresh-io/task-logger@^0.0.17":
+  version "0.0.17"
+  resolved "https://registry.yarnpkg.com/@codefresh-io/task-logger/-/task-logger-0.0.17.tgz#0f112e520c00390356671a94db3d3c842381b67c"
+  integrity sha512-EmC7FNRkBfG0y6po/L6jZczleuCxndCZRMYZ/YUy0xUHgiMItdvGwkBI3Sce8B3m0joCuQGtakuVNgZ5hDnp9Q==
   dependencies:
     cf-errors "^0.1.11"
     crypto "0.0.3"
