@@ -1,6 +1,6 @@
 {
   "name": "cf-container-logger",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "codefresh container logger",
   "keywords": [
     "cf-container-logger"
