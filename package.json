@@ -45,6 +45,7 @@
     "clean": "gulp clean",
     "start": "node server/index.js",
     "gulp": "gulp",
-    "eslint": "eslint"
+    "eslint": "eslint",
+    "version": "exit 0"
   }
 }
