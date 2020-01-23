@@ -1,39 +1,93 @@
-version: '1.0'
-
+version: "1.0"
+stages:
+  - clone
+  - prepare
+  - build
+  - test
+  - release
 steps:
 
+  main_clone:
+    title: 'Cloning main repository...'
+    stage: clone
+    type: git-clone
+    repo: ${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}
+    revision: ${{CF_BRANCH}}
+    git: ${{GIT_CONTEXT}}
 
-  install_dependencies:
-    title: 'Installing testing dependencies'
-    image: node:11.10.0
+  prepare_env_vars:
+    title: 'Preparing environment variables...'
+    stage: prepare
+    image: codefreshio/ci-helpers
+    working_directory: ${{main_clone}}
     commands:
-        - yarn install --frozen-lockfile
+      - cf_export NODE_VERSION=11.10.0
+      - cf_export SERVICE_VERSION=$(yq r service.yaml version)
+      - cf_export IMAGE_NAME=codefresh/cf-container-logger
 
-  eslint:
-    title: 'Running linting logic'
-    image: node:11.10.0
+  validate_version:
+    title: 'Validating the service version...'
+    stage: prepare
+    image: codefreshio/ci-helpers
+    fail_fast: false
     commands:
-        - yarn lint
-        - yarn no-onlys
+    - |
+      err() { echo -e "\e[31m$@\e[0m" ; return 1 ; }
+      ok() { echo -e "\e[32m$@\e[0m" ; return 0 ; }
 
-  unit_test_step:
-    image: node:11.10.0
-    environment:
-        - COVERALLS_TOKEN=${{COVERALLS_TOKEN}}
-    commands:
-        - yarn test
+      current_version=${SERVICE_VERSION}
+      last_version=$(git describe --abbrev=0 --tags)
+      echo "Current version is $current_version, last version - $last_version"
+      semver-cli greater $current_version $last_version && ok "Version check ok" || err "Please the update the version in the service.yaml file"
 
-  build_step:
-    title: "Building production image"
+  build_image:
+    title: "Building the image..."
+    stage: build
     type: build
-    image_name: codefresh/cf-container-logger
-    on_success:
-      metadata:
-        set:
-          - '${{build_step.imageId}}':
-              - CF_QUALITY: true
+    working_directory: ${{main_clone}}
+    dockerfile: ./Dockerfile
+    image_name: ${{IMAGE_NAME}}
+    tag: ${{CF_BRANCH_TAG_NORMALIZED}}
 
-  push to registry:
-    type: push
-    candidate: ${{build_step}}
-    tag: ${{CF_BRANCH}}
+  run_tests:
+    title: "Running unit tests & linting"
+    stage: test
+    image: node:${{NODE_VERSION}}
+    commands:
+      - yarn install --frozen-lockfile
+      - yarn lint
+      - yarn no-onlys
+      - yarn test
+
+  approve_existing_version_update:
+    type: pending-approval
+    stage: release
+    title: "Are you sure you want to update already existing image version?"
+    description: |
+      "Used for reverting changes without raising the service version"
+    when:
+      branch:
+        only: [master]
+      steps:
+       - name: validate_version
+         on:
+           - failure
+
+  release:
+    type: parallel
+    stage: release
+    steps:
+
+      push_image_prod:
+        type: push
+        title: "Pushing the image to the public registry..."
+        stage: release
+        image_name: '${{IMAGE_NAME}}'
+        registry: "${{REGISTRY_INTEGRATION}}"
+        candidate: "${{build_image}}"
+        tags:
+          - "${{SERVICE_VERSION}}"
+          - "latest"
+        when:
+          branch:
+            only: [master]
