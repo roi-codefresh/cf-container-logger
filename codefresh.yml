@@ -78,6 +78,22 @@ steps:
     stage: release
     steps:
 
+      add_git_tag:
+          title: "Adding Git tag..."
+          stage: release
+          image: codefreshio/ci-helpers
+          commands:
+            - source /get-token/get-gh-token.sh
+            - |
+              curl --fail -X POST -d '{"ref": "refs/tags/${{SERVICE_VERSION}}","sha": "${{CF_REVISION}}"}' -H "Content-Type: application/json" -H "Authorization: token ${GITHUB_TOKEN}" https://api.github.com/repos/${{CF_REPO_OWNER}}/${{CF_REPO_NAME}}/git/refs
+          when:
+            branch:
+              only: [master]
+            steps:
+             - name: validate_version
+               on:
+                 - success
+                 
       push_image_prod:
         type: push
         title: "Pushing the image to the public registry..."
