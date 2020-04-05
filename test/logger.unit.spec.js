@@ -74,7 +74,9 @@ describe('Logger tests', () => {
             it('should start and not listen for existing container in case findExistingContainers param is false', async () => { // jshint ignore:line
                 const taskLogger        = { // jshint ignore:line
                     on: sinon.spy(),
-                    restore: sinon.spy(() => Q.resolve())
+                    restore: sinon.spy(() => Q.resolve()),
+                    startHealthCheck: sinon.spy(),
+                    onHealthCheckReported: sinon.spy(),
                 };
                 const TaskLoggerFactory = sinon.spy(() => {
                     return Q.resolve(taskLogger);
@@ -106,11 +108,99 @@ describe('Logger tests', () => {
 
             });
 
+            it('should report health check status if failed', async () => { // jshint ignore:line
+                let onHealthCheckReportedCb;
+                const onHealthCheckReportedSpy = sinon.spy((func) =>  {
+                    onHealthCheckReportedCb = func;
+                });
+
+                const taskLogger        = { // jshint ignore:line
+                    on: sinon.spy(),
+                    restore: sinon.spy(() => Q.resolve()),
+                    startHealthCheck: sinon.spy(),
+                    onHealthCheckReported: onHealthCheckReportedSpy,
+                };
+                const TaskLoggerFactory = sinon.spy(() => {
+                    return Q.resolve(taskLogger);
+                });
+
+                const Logger = proxyquire('../lib/logger', {
+                    '@codefresh-io/task-logger': { TaskLogger: TaskLoggerFactory }
+                });
+
+                const loggerId               = 'loggerId';
+                const taskLoggerConfig = {task: {}, opts: {}};
+                const findExistingContainers = false;
+
+                const logger                        = new Logger({
+                    loggerId,
+                    taskLoggerConfig,
+                    findExistingContainers,
+                });
+                logger._listenForNewContainers      = sinon.spy();
+                logger._writeNewState               = sinon.spy();
+                logger._listenForExistingContainers = sinon.spy();
+                logger.start();
+                
+
+                await Q.delay(10);
+                onHealthCheckReportedCb({status: 'failed'});
+                
+                expect(taskLogger.startHealthCheck).to.be.calledOnce;
+                expect(logger.state.failedHealthChecks.length).to.be.equals(1);
+
+            });
+
+            it('should report health check status if succeed', async () => { // jshint ignore:line
+                let onHealthCheckReportedCb;
+                const onHealthCheckReportedSpy = sinon.spy((func) =>  {
+                    onHealthCheckReportedCb = func;
+                });
+
+                const taskLogger        = { // jshint ignore:line
+                    on: sinon.spy(),
+                    restore: sinon.spy(() => Q.resolve()),
+                    startHealthCheck: sinon.spy(),
+                    onHealthCheckReported: onHealthCheckReportedSpy,
+                };
+                const TaskLoggerFactory = sinon.spy(() => {
+                    return Q.resolve(taskLogger);
+                });
+
+                const Logger = proxyquire('../lib/logger', {
+                    '@codefresh-io/task-logger': { TaskLogger: TaskLoggerFactory }
+                });
+
+                const loggerId               = 'loggerId';
+                const taskLoggerConfig = {task: {}, opts: {}};
+                const findExistingContainers = false;
+
+                const logger                        = new Logger({
+                    loggerId,
+                    taskLoggerConfig,
+                    findExistingContainers,
+                });
+                logger._listenForNewContainers      = sinon.spy();
+                logger._writeNewState               = sinon.spy();
+                logger._listenForExistingContainers = sinon.spy();
+                logger.start();
+                
+
+                await Q.delay(10);
+                onHealthCheckReportedCb({status: 'succeed'});
+                
+                expect(taskLogger.startHealthCheck).to.be.calledOnce;
+                expect(logger.state.healthCheckStatus).to.deep.equal({status: 'succeed'});
+
+            });
+
             it('should start and listen for existing container in case findExistingContainers param is "true"', async () => {
 
                 const taskLogger        = {
                     on: sinon.spy(),
-                    restore: sinon.spy(() => Q.resolve())
+                    restore: sinon.spy(() => Q.resolve()),
+                    startHealthCheck: sinon.spy(),
+                    onHealthCheckReported: sinon.spy(),
                 };
                 const TaskLoggerFactory = sinon.spy(() => {
                     return Q.resolve(taskLogger);
