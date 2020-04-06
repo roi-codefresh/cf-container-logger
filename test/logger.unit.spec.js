@@ -389,6 +389,9 @@ describe('Logger tests', () => {
             const Logger = proxyquire('../lib/logger', {
                 'fs': {
                     writeFile: writeFileSpy,
+                    readFileSync: sinon.spy(() => {
+                        return '{}';
+                    }),
                     existsSync: () => { return true; }
                 }
             });
@@ -406,6 +409,9 @@ describe('Logger tests', () => {
             const Logger = proxyquire('../lib/logger', {
                 'fs': {
                     writeFile: writeFileSpy,
+                    readFileSync: sinon.spy(() => {
+                        return '{}';
+                    }),
                     existsSync: () => { return true; },
                 }
             });
