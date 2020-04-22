@@ -8,6 +8,8 @@ const sinonChai = require('sinon-chai');
 chai.use(sinonChai);
 const ContainerLogger = require('../lib/ContainerLogger');
 const LoggerStrategy  = require('../lib/enums').LoggerStrategy;
+const { EventEmitter } = require('events');
+const { Writable, Readable, PassThrough } = require('stream');
 
 describe('Container Logger tests', () => {
 
@@ -659,5 +661,185 @@ describe('Container Logger tests', () => {
         });
     });
 
+    describe('end event', () => {
+        it('should emit "end" event - tty', async () => {
+            const containerInspect = {
+                Config: {
+                    Tty: true
+                }
+            };
 
+            const stdoutStream = new EventEmitter();
+            const stderrStream = new EventEmitter();
+
+            const containerId = 'containerId';
+            const containerInterface = {
+                inspect: (callback) => {
+                    callback(null, containerInspect);
+                },
+                attach: (options, callback) => {
+                    if (options.stdout) {
+                        callback(null, stdoutStream);
+                    } else {
+                        callback(null, stderrStream);
+                    }
+                }
+            };
+            const stepLogger = {
+                write: sinon.spy()
+            };
+            const loggerStrategy = LoggerStrategy.ATTACH;
+
+            const containerLogger = new ContainerLogger({
+                containerId,
+                containerInterface,
+                stepLogger,
+                loggerStrategy
+            });
+            let endEventCalled = false;
+            containerLogger.once('end', () => { endEventCalled = true; });
+            containerLogger._logMessage = sinon.spy();
+            await containerLogger.start();
+            
+            expect(containerLogger.handledStreams).to.be.equal(2);
+            expect(containerLogger.finishedStreams).to.be.equal(0);
+            expect(endEventCalled).to.be.false;
+            stdoutStream.emit('end');
+            expect(endEventCalled).to.be.false;
+            expect(containerLogger.finishedStreams).to.be.equal(1);
+            stderrStream.emit('end');
+            expect(endEventCalled).to.be.true;
+            expect(containerLogger.finishedStreams).to.be.equal(2);
+        });
+
+        it('should emit "end" event - non tty', async () => {
+            const containerInspect = {
+                Config: {
+                    Tty: false
+                }
+            };
+
+            const stdoutStream = new EventEmitter();
+
+            const containerId = 'containerId';
+            const containerInterface = {
+                inspect: (callback) => {
+                    callback(null, containerInspect);
+                },
+                attach: (opt, callback) => {
+                    callback(null, stdoutStream);
+                }
+            };
+            const stepLogger = {
+                write: sinon.spy()
+            };
+            const loggerStrategy = LoggerStrategy.ATTACH;
+
+            const containerLogger = new ContainerLogger({
+                containerId,
+                containerInterface,
+                stepLogger,
+                loggerStrategy
+            });
+            let endEventCalled = false;
+            containerLogger.once('end', () => { endEventCalled = true; });
+            containerLogger._logMessage = sinon.spy();
+            await containerLogger.start();
+            
+            expect(containerLogger.handledStreams).to.be.equal(1);
+            expect(containerLogger.finishedStreams).to.be.equal(0);
+            expect(endEventCalled).to.be.false;
+            stdoutStream.emit('end');
+            expect(endEventCalled).to.be.true;
+            expect(containerLogger.finishedStreams).to.be.equal(1);
+        });
+
+        it('should emit "end" event - writable stream', async () => {
+            const containerInspect = {
+                Config: {
+                    Tty: true
+                }
+            };
+
+            class FakeReadableStream extends Readable {
+                constructor() {
+                    super();
+                    this.readCalled = false;
+                }
+
+                _read() {
+                    if (!this.readCalled) {
+                        this.readCalled = true;
+                        this.push('check');
+                    } else {
+                        return this.push(null); // end stream
+                    }
+                }
+            }
+
+            const stdoutStream = sinon.spy(new FakeReadableStream('stdout'));
+            const stderrStream = sinon.spy(new FakeReadableStream('stderr'));
+
+            const containerId = 'containerId';
+            const containerInterface = {
+                inspect: (callback) => {
+                    callback(null, containerInspect);
+                },
+                attach: (options, callback) => {
+                    if (options.stdout) {
+                        callback(null, stdoutStream);
+                    } else {
+                        callback(null, stderrStream);
+                    }
+                }
+            };
+
+            let finishedStreams = 0;
+            let writableSpy;
+            const transformSpies = [];
+
+            const stepLogger = {
+                writeStream: sinon.spy(() => {
+                    const writable = sinon.spy(new Writable({
+                        write(chunk, encoding, cb) {
+                            cb(null); // continue
+                        }
+                    }));
+                    writableSpy = writable;
+                    return writable;
+                }),
+                stepNameTransformStream: () => {
+                    const transform = sinon.spy(new PassThrough());
+                    transform.once('end', () => { finishedStreams += 1; });
+                    transformSpies.push(transform);
+                    return transform;
+                },
+                opts: {
+                    logsRateLimitConfig: {} // use stream
+                }
+            };
+            const loggerStrategy = LoggerStrategy.ATTACH;
+
+            const containerLogger = new ContainerLogger({
+                containerId,
+                containerInterface,
+                stepLogger,
+                loggerStrategy
+            });
+            let endCalled = false;
+            containerLogger.once('end', () => { endCalled = true; });
+            containerLogger._logMessage = sinon.spy();
+            await containerLogger.start();
+            await Q.delay(20); // incase the piping is not finished
+            
+            expect(stepLogger.writeStream).to.have.been.calledOnce;
+            expect(containerLogger.handledStreams).to.be.equal(2);
+            expect(transformSpies[0].pipe).to.have.been.calledOnceWith(writableSpy, { end: false });
+            expect(transformSpies[1].pipe).to.have.been.calledOnceWith(writableSpy, { end: false });
+            expect(transformSpies[0].once).to.have.been.calledWith('end');
+            expect(transformSpies[1].once).to.have.been.calledWith('end');
+            expect(finishedStreams).to.be.equal(2);
+            expect(endCalled).to.be.true;
+        });
+    });
 });

@@ -14,42 +14,51 @@ const sinonChai  = require('sinon-chai');
 chai.use(sinonChai);
 
 const Waiter = require('../lib/waitUntilFinish');
-sinon.spy(Waiter.prototype, '_finishOnTimeout');
-sinon.spy(Waiter.prototype, '_checkTimeout');
+sinon.spy(Waiter.prototype, '_checkFinished');
+const originalProcessKill = process.kill;
+process.kill = pid => pid;
+sinon.spy(process, 'kill');
 
 const statePath = path.resolve(os.tmpdir(), 'state.json');
-const writeDate = (date = Date.now()) => {
+const writeDate = (date = Date.now(), status, pid = 1111) => {
     console.log(new Date(date));
-    fs.writeFileSync(statePath, JSON.stringify({ lastLogsDate: date }));
+    fs.writeFileSync(statePath, JSON.stringify({ pid, status, lastLogsDate: date }));
 };
 
 
-describe('waitUntilFinish script test', () => {
+describe('waitUntilFinish script test', function () {
+    this.timeout(8000);
+
     beforeEach(() => {
         writeDate();
-        Waiter.prototype._finishOnTimeout.resetHistory();
-        Waiter.prototype._checkTimeout.resetHistory();
+        Waiter.prototype._checkFinished.resetHistory();
+        process.kill.resetHistory();
     });
 
-    it('should finish immediately if now - lastLogsDate > timeout', async () => {
-        writeDate(Date.now() - 2000);
-        await Waiter.wait(1000, statePath);
-        expect(Waiter.prototype._finishOnTimeout).to.have.been.calledOnce;
-        expect(Waiter.prototype._checkTimeout).to.have.been.calledOnce;
+    after(() => {
+        process.kill = originalProcessKill;
     });
 
-    it('should wait until now - lastLogsDate > timeout', async () => {
-        await Waiter.wait(1000, statePath);
-        expect(Waiter.prototype._finishOnTimeout.getCalls().length).to.be.approximately(11, 1);
-        expect(Waiter.prototype._checkTimeout.getCalls().length).to.be.approximately(11, 1);
+    it('should finish immediately if now - status is done when starting', async () => {
+        writeDate(undefined, 'done');
+        await Waiter.wait(statePath);
+        expect(Waiter.prototype._checkFinished).to.have.been.calledOnce;
     });
 
-    it('should wait until now - lastLogsDate > timeout in case when lastLogsDate was updated', async () => {
-        const promise = Waiter.wait(1000, statePath);
-        await Q.delay(500);
-        writeDate();
-        await promise;
-        expect(Waiter.prototype._finishOnTimeout.getCalls().length).to.be.approximately(15, 1);
-        expect(Waiter.prototype._checkTimeout.getCalls().length).to.be.approximately(15, 1);
+    it('should send SIGUSR2 to container logger process', async () => {
+        writeDate(undefined, 'done', 1111);
+        await Waiter.wait(statePath);
+        expect(process.kill).to.have.been.calledOnceWith(1111, 'SIGUSR2');
+    });
+
+    it('should watch file and finish if status is set to done', async () => {
+        writeDate(Date.now() - 2000, 'ready');
+        const waitPromise = Waiter.wait(statePath);
+        await Q.delay(300);
+        writeDate(Date.now(), 'ready');
+        await Q.delay(300);
+        writeDate(Date.now(), 'done');
+        await waitPromise;
+        expect(Waiter.prototype._checkFinished.getCalls()).to.have.lengthOf(3);        
     });
 });
