@@ -814,6 +814,7 @@ describe('Container Logger tests', () => {
                     transformSpies.push(transform);
                     return transform;
                 },
+                createMaskingStream: () => new PassThrough(),
                 opts: {
                     logsRateLimitConfig: {} // use stream
                 }
