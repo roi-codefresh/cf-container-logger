@@ -6,7 +6,7 @@
     "cf-container-logger"
   ],
   "dependencies": {
-    "@codefresh-io/task-logger": "1.7.0",
+    "@codefresh-io/task-logger": "1.7.1",
     "body-parser": "^1.19.0",
     "cf-errors": "^0.1.11",
     "cf-logs": "^1.1.0",
