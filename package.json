@@ -6,7 +6,7 @@
     "cf-container-logger"
   ],
   "dependencies": {
-    "@codefresh-io/task-logger": "1.8.1",
+    "@codefresh-io/task-logger": "^1.8.8",
     "body-parser": "^1.19.0",
     "cf-errors": "^0.1.11",
     "cf-logs": "^1.1.0",
@@ -37,7 +37,10 @@
     "sinon-chai": "^3.3.0"
   },
   "engines": {
-    "node": ">8.8.0"
+    "node": ">=11.10.0"
+  },
+  "resolutions": {
+    "graceful-fs": "^4.2.4"
   },
   "scripts": {
     "lint": "gulp lint",
