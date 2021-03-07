@@ -1,17 +1,28 @@
-// Codefresh Code Style - eslint ruleset
-// Based on AirBnB.
-//
-// More details: https://codefresh-io.atlassian.net/wiki/display/COD/Code+Style+Guide
 {
-
   "extends": "airbnb",
+  "ignorePatterns":[
+    "node_modules"
+  ],
   "parserOptions": {
-    "ecmaVersion": 6,
+    "ecmaVersion": 2018,
     "sourceType": "script",
     "ecmaFeatures": {
-      "jsx": true
+      "impliedStrict": true
     }
   },
+
+  "env": {
+    "node": true,
+    "mocha": true
+  },
+
+  "plugins": [
+    "chai-friendly",
+    "import",
+    "mocha",
+    "node",
+    "promise"
+  ],
 
   "rules": {
     "indent": [
@@ -33,7 +44,20 @@
         "allowTemplateLiterals": true
       }
     ],
+    "max-len": [
+      2,
+      {
+        "code": 180,
+        "tabWidth": 4,
+        "ignoreUrls": true
+      }
+    ],
+    "no-use-before-define": "off",
+    "no-plusplus": "off",
+    "consistent-return": "warn",
+    "class-methods-use-this": "off",
     "no-underscore-dangle": "off",
+    "no-multi-spaces": "off",
     "no-param-reassign": "off",
     "no-else-return": "off",
     "arrow-body-style": "off",
@@ -41,7 +65,6 @@
       "error",
       "global"
     ],
-    "no-multi-spaces": "off",
     "padded-blocks": "off",
     "import/no-extraneous-dependencies": [
       2,
@@ -52,6 +75,41 @@
     "guard-for-in": "error",
     "no-console": "off",
     "comma-dangle": ["error", "only-multiline"],
-    "quote-props": ["error", "consistent"]
-  }
+    "quote-props": ["error", "consistent"],
+
+    "promise/catch-or-return": ["error", { "allowThen": true }],
+    "promise/no-native": "error",
+
+    "mocha/no-exclusive-tests": "error",
+
+    "no-unused-expressions": "off",
+    "chai-friendly/no-unused-expressions": "error",
+
+    "node/no-unsupported-features": "error",
+    "node/process-exit-as-throw": "error",
+    "node/shebang": "warn",
+    "node/no-deprecated-api": "warn",
+    "no-useless-constructor": "warn",
+    "no-return-await": "off"
+  },
+  "overrides": [
+    {
+      "plugins": ["jest"],
+      "env": {
+        "jest": true
+      },
+      "files": [
+        "**/__tests__/**/*.[jt]s?(x)",
+        "__mocks__/**/*.js",
+        "**/__mocks__/**/*.js"
+      ],
+      "rules": {
+        "jest/no-disabled-tests": "warn",
+        "jest/no-focused-tests": "error",
+        "jest/no-identical-title": "error",
+        "jest/prefer-to-have-length": "warn",
+        "jest/valid-expect": "error"
+      }
+    }
+  ]
 }

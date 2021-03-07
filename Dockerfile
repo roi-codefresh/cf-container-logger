@@ -1,6 +1,8 @@
-FROM node:11.10.0-alpine
+FROM node:10.24.0-alpine3.11
 
 WORKDIR /root/cf-runtime
+
+RUN apk -U upgrade
 
 RUN apk add --no-cache bash git openssh-client tini
 
