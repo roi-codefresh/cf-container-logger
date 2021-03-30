@@ -111,7 +111,7 @@ describe('Logger tests', () => {
                 logger.start();
 
                 await Q.delay(10);
-                expect(TaskLoggerFactory).to.have.been.calledWith(taskLoggerConfig.task, taskLoggerConfig.opts);
+                expect(TaskLoggerFactory).to.have.been.calledWith(taskLoggerConfig.task, { ...taskLoggerConfig.opts, updateLogsRate: true });
                 expect(logger._listenForNewContainers).to.have.been.calledOnce; // jshint ignore:line
                 expect(logger._writeNewState).to.have.been.calledOnce; // jshint ignore:line
                 expect(logger._listenForExistingContainers).to.not.have.been.called; // jshint ignore:line
