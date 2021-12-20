@@ -38,10 +38,10 @@
   dependencies:
     regenerator-runtime "^0.13.4"
 
-"@codefresh-io/task-logger@^1.8.15":
-  version "1.8.15"
-  resolved "https://registry.yarnpkg.com/@codefresh-io/task-logger/-/task-logger-1.8.15.tgz#a5351f20268b2fcb64f1691d4fe2ead27557dd5c"
-  integrity sha512-m4RAHGoHuzS3K0vOt09vrGaOhr64CJXxItgQ0T6POnW6zmw7kfR0EV8g6lv65EREYE6hHRgXdIA/Uvvq/KLuAw==
+"@codefresh-io/task-logger@^1.9.18":
+  version "1.9.18"
+  resolved "https://registry.yarnpkg.com/@codefresh-io/task-logger/-/task-logger-1.9.18.tgz#219babad0fe29d21f53fb41af07835ed872b092e"
+  integrity sha512-p1XV3ubqvJ/5foC3Ypf/8bwbcQSxAPV1jCHuHld4O2aigu12sHHMw4yXZVp0WcR3o9qeXNiQxzFYClVYMBhj/w==
   dependencies:
     cf-errors "^0.1.16"
     debug "^4.1.1"
