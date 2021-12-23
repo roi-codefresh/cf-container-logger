@@ -6,7 +6,7 @@
     "cf-container-logger"
   ],
   "dependencies": {
-    "@codefresh-io/task-logger": "^1.9.18",
+    "@codefresh-io/task-logger": "^1.9.22",
     "body-parser": "^1.19.0",
     "cf-errors": "^0.1.15",
     "cf-logs": "^1.1.0",
@@ -52,7 +52,7 @@
     "lint-fix": "eslint '*/**/*.js' --fix",
     "test": "node ./node_modules/mocha/bin/_mocha './{,!(node_modules)/**/}*.spec.js' --exit",
     "test:ci": "yarn test",
-    "start": "node server/index.js",
+    "start": "node lib/index.js",
     "version": "exit 0"
   }
 }
