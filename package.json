@@ -45,7 +45,7 @@
     "sinon-chai": "^3.3.0"
   },
   "engines": {
-    "node": "10.24.0"
+    "node": "16.13.1"
   },
   "scripts": {
     "lint": "eslint '*/**/*.js'",

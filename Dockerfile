@@ -1,4 +1,4 @@
-FROM node:10.24.0-alpine3.11
+FROM node:16.13.1-alpine3.14
 
 WORKDIR /root/cf-runtime
 
@@ -11,7 +11,7 @@ COPY package.json ./
 COPY yarn.lock ./
 
 # install cf-runtime required binaries
-RUN apk add --no-cache --virtual deps python make g++ && \
+RUN apk add --no-cache --virtual deps python3 make g++ && \
     yarn install --frozen-lockfile --production && \
     yarn cache clean && \
     apk del deps && \
