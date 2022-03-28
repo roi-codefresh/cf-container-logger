@@ -13,7 +13,6 @@
     "docker-events": "0.0.2",
     "dockerode": "^2.5.8",
     "express": "^4.17.3",
-    "forever": "^3.0.4",
     "lodash": "^4.17.21",
     "q": "^1.5.1",
     "request": "^2.88.2",
