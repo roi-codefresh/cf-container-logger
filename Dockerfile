@@ -20,4 +20,8 @@ RUN apk add --no-cache --virtual deps \
 # copy app files
 COPY . ./
 
+RUN adduser -D -h /home/cfu -s /bin/bash cfu    
+
+USER cfu
+
 CMD ["node", "lib/index.js"]
