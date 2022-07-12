@@ -1,10 +1,14 @@
 {
   "name": "cf-container-logger",
-  "version": "0.1.0",
+  "version": "1.8.3",
   "description": "codefresh container logger",
   "keywords": [
     "cf-container-logger"
   ],
+  "resolutions": {
+    "minimist": "^0.2.1",
+    "redis": "^3.1.1"
+  },
   "dependencies": {
     "@codefresh-io/task-logger": "^1.9.24",
     "body-parser": "^1.19.0",
@@ -37,7 +41,7 @@
     "sinon-chai": "^3.7.0"
   },
   "engines": {
-    "node": "16.14.2"
+    "node": "16.16.0"
   },
   "scripts": {
     "lint": "eslint '*/**/*.js'",
