@@ -2,16 +2,27 @@
 
 const Q = require('q');
 const chai = require('chai');
-const expect = chai.expect;
 const sinon = require('sinon');
+const proxyquire = require('proxyquire');
+const promiseRetry = require('promise-retry');
 const sinonChai = require('sinon-chai');
-chai.use(sinonChai);
-const ContainerLogger = require('../lib/ContainerLogger');
 const LoggerStrategy = require('../lib/enums').LoggerStrategy;
 const { EventEmitter } = require('events');
 const { Writable, Readable, PassThrough } = require('stream');
 
+const expect = chai.expect;
+chai.use(sinonChai);
+
+const promiseRetrySpy = sinon.spy((err) => Q.reject(err));
+
+const ContainerLogger = proxyquire('../lib/ContainerLogger', {
+    'promise-retry': (cb) => cb(promiseRetrySpy, 1),
+});
+
 describe('Container Logger tests', () => {
+    beforeEach(() => {
+        promiseRetrySpy.resetHistory();
+    });
 
     describe('start', () => {
 
@@ -191,6 +202,7 @@ describe('Container Logger tests', () => {
                     .then(() => {
                         return Q.reject(new Error('should have failed'));
                     }, (err) => {
+                        expect(promiseRetrySpy).not.to.have.been.called;
                         expect(err.toString())
                             .to
                             .contain('Strategy: non-existing-strategy is not supported');
@@ -216,6 +228,7 @@ describe('Container Logger tests', () => {
                     .then(() => {
                         return Q.reject(new Error('should have failed'));
                     }, (err) => {
+                        expect(promiseRetrySpy).to.have.been.calledOnceWith(err);
                         expect(err.toString()).to.contain('inspect error');
                     })
                     .done(done, done);
@@ -256,6 +269,7 @@ describe('Container Logger tests', () => {
                             expect(options.tty).to.equal(true);
                         });
                         expect(err.toString()).to.contain('attach error');
+                        expect(promiseRetrySpy).to.have.been.calledOnceWith(err);
                     })
                     .done(done, done);
             });
@@ -293,6 +307,7 @@ describe('Container Logger tests', () => {
                             expect(options.follow).to.equal(true);
                         });
                         expect(err.toString()).to.contain('logs error');
+                        expect(promiseRetrySpy).to.have.been.calledOnceWith(err);
                     })
                     .done(done, done);
             });
@@ -720,14 +735,15 @@ describe('Container Logger tests', () => {
             };
 
             const stdoutStream = new EventEmitter();
+            const stderrStream = new EventEmitter();
 
             const containerId = 'containerId';
             const containerInterface = {
                 inspect: (callback) => {
                     callback(null, containerInspect);
                 },
-                attach: (opt, callback) => {
-                    callback(null, stdoutStream);
+                attach: ({ stderr }, callback) => {
+                    callback(null, stderr ? stderrStream : stdoutStream);
                 }
             };
             const stepLogger = {
@@ -746,12 +762,14 @@ describe('Container Logger tests', () => {
             containerLogger._logMessage = sinon.spy();
             await containerLogger.start();
 
-            expect(containerLogger.handledStreams).to.be.equal(1);
+            expect(containerLogger.handledStreams).to.be.equal(2);
             expect(containerLogger.finishedStreams).to.be.equal(0);
             expect(endEventCalled).to.be.false;
             stdoutStream.emit('end');
+            expect(endEventCalled).to.be.false;
+            stderrStream.emit('end');
             expect(endEventCalled).to.be.true;
-            expect(containerLogger.finishedStreams).to.be.equal(1);
+            expect(containerLogger.finishedStreams).to.be.equal(2);
         });
 
         it('should emit "end" event - writable stream', async () => {

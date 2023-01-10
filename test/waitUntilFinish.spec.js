@@ -11,13 +11,18 @@ const chai       = require('chai');
 const expect     = chai.expect;
 const sinon      = require('sinon');
 const sinonChai  = require('sinon-chai');
+const proxyquire = require('proxyquire');
+const { BuildFinishedSignalFilename } = require('../lib/enums');
 chai.use(sinonChai);
 
-const Waiter = require('../lib/waitUntilFinish');
+const writeFileSpy = sinon.spy();
+const Waiter = proxyquire('../lib/waitUntilFinish', {
+    fs: {
+        ...fs,
+        writeFileSync: writeFileSpy,
+    }
+});
 sinon.spy(Waiter.prototype, '_checkFinished');
-const originalProcessKill = process.kill;
-process.kill = pid => pid;
-sinon.spy(process, 'kill');
 
 const statePath = path.resolve(os.tmpdir(), 'state.json');
 const writeDate = (date = Date.now(), status, pid = 1111) => {
@@ -32,11 +37,7 @@ describe('waitUntilFinish script test', function () {
     beforeEach(() => {
         writeDate();
         Waiter.prototype._checkFinished.resetHistory();
-        process.kill.resetHistory();
-    });
-
-    after(() => {
-        process.kill = originalProcessKill;
+        writeFileSpy.resetHistory();
     });
 
     it('should finish immediately if now - status is done when starting', async () => {
@@ -45,10 +46,11 @@ describe('waitUntilFinish script test', function () {
         expect(Waiter.prototype._checkFinished).to.have.been.calledOnce;
     });
 
-    it('should send SIGUSR2 to container logger process', async () => {
+    it('should write build finished file to the correct location', async () => {
         writeDate(undefined, 'done', 1111);
         await Waiter.wait(statePath);
-        expect(process.kill).to.have.been.calledOnceWith(1111, 'SIGUSR2');
+        const expectedPath = path.join(path.resolve(__dirname, '../lib'), BuildFinishedSignalFilename);
+        expect(writeFileSpy).to.have.been.calledOnceWith(expectedPath, 'build is finished');
     });
 
     it('should watch file and finish if status is set to done', async () => {

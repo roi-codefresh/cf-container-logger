@@ -1,0 +1,55 @@
+ARG OS_RELEASE
+
+FROM mcr.microsoft.com/windows/servercore:${OS_RELEASE} as download
+
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+ENV GIT_VERSION 2.39.0
+ENV NODE_VERSION 16.18.1
+ENV YARN_VERSION 1.22.19
+
+# Download and install git
+RUN Invoke-WebRequest $('https://github.com/git-for-windows/git/releases/download/v{0}.windows.1/MinGit-{0}-64-bit.zip' -f $env:GIT_VERSION) -OutFile 'MinGit.zip' -UseBasicParsing ; \
+    Expand-Archive c:\MinGit.zip -DestinationPath c:\MinGit; \
+    $env:PATH = $env:PATH + ';C:\MinGit\cmd\;C:\MinGit\cmd'; \
+    Set-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment\' -Name Path -Value $env:PATH
+
+# Download and install node.js
+RUN Invoke-WebRequest $('https://nodejs.org/dist/v{0}/node-v{0}-win-x64.zip' -f $env:NODE_VERSION) -OutFile 'node.zip' -UseBasicParsing ; \
+    #    $sum = $(cat SHASUMS256.txt.asc | sls $('  node-v{0}-win-x64.zip' -f $env:NODE_VERSION)) -Split ' ' ; \
+    #    if ((Get-FileHash node.zip -Algorithm sha256).Hash -ne $sum[0]) { Write-Error 'SHA256 mismatch' } ; \
+    Expand-Archive node.zip -DestinationPath C:\ ; \
+    Rename-Item -Path $('C:\node-v{0}-win-x64' -f $env:NODE_VERSION) -NewName 'C:\nodejs'
+
+# Download and install yarn
+RUN [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 ; \
+    Invoke-WebRequest $('https://github.com/yarnpkg/yarn/releases/download/v{0}/yarn-{0}.msi' -f $env:YARN_VERSION) -OutFile yarn.msi -UseBasicParsing ; \
+    Start-Process msiexec.exe -ArgumentList '/i', 'yarn.msi', '/quiet', '/norestart' -NoNewWindow -Wait
+
+FROM download as install
+
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+ENV NPM_CONFIG_LOGLEVEL info
+
+COPY --from=download /nodejs /nodejs
+COPY --from=download [ "/Program Files (x86)/yarn", "/yarn" ]
+
+RUN $env:PATH = 'C:\nodejs;C:\yarn\bin;{0}' -f $env:PATH ; \
+    [Environment]::SetEnvironmentVariable('PATH', $env:PATH, [EnvironmentVariableTarget]::Machine)
+
+FROM install
+
+WORKDIR C:/cf-container-logger
+
+COPY package.json ./
+
+COPY yarn.lock ./
+
+RUN yarn install --frozen-lockfile --production
+
+COPY . ./
+
+LABEL owner="codefresh.io"
+
+CMD ["powershell",  "./lib/forever.ps1"]
