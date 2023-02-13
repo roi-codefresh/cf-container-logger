@@ -2,15 +2,15 @@ FROM node:16.18.1-bullseye-slim
 
 WORKDIR /root/cf-runtime
 
-RUN apt-get update && apt upgrade -y
+RUN apt-get update && apt upgrade -y && \
+    apt-get install g++ git  make python3 -y
 
 COPY package.json yarn.lock ./
 
 # install cf-runtime required binaries
-RUN apt-get install g++ git  make python3 -y && \
-    yarn install --frozen-lockfile --production && \
+RUN yarn install --frozen-lockfile --production && \
     yarn cache clean && \
-    apt-get purge g++ git make python3  -y && \
+    apt-get purge g++ git make python3 -y && \
     apt-get autoremove -y && \
     apt-get clean -y && \
     rm -rf /tmp/* && \

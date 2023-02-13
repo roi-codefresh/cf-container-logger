@@ -60,6 +60,16 @@ describe('isReady script', () => {
             });
             expect(process.exit).to.have.been.calledOnceWith(0);
         });
+        it('Should check exit with 0 code if container is finished status', () => {
+            const state = JSON.stringify({ status: 'ready', containers: { 'container-id': { status: ContainerHandlingStatus.FINISHED } } })
+            process.argv = ['foo', 'bar', 'container-id'];
+            proxyquire('../lib/isReady.js', {
+                'fs': {
+                    readFileSync: () => Buffer.from(state),
+                },
+            });
+            expect(process.exit).to.have.been.calledOnceWith(0);
+        });
         it('Should check exit with 1 code if container is not ready', () => {
             const state = JSON.stringify({ status: 'ready', containers: { 'container-id': { status: ContainerHandlingStatus.INITIALIZING } } })
             process.argv = ['foo', 'bar', 'container-id'];

@@ -1,17 +1,17 @@
 'use strict';
 
-const Q          = require('q');
+const Q = require('q');
 const proxyquire = require('proxyquire').noCallThru();
-const chai       = require('chai');
-const expect     = chai.expect;
-const sinon      = require('sinon');
-const sinonChai  = require('sinon-chai');
+const chai = require('chai');
+const expect = chai.expect;
+const sinon = require('sinon');
+const sinonChai = require('sinon-chai');
 chai.use(sinonChai);
 const ContainerStatus = require('../lib/enums').ContainerStatus;
-const LoggerStrategy  = require('../lib/enums').LoggerStrategy;
+const LoggerStrategy = require('../lib/enums').LoggerStrategy;
 const { EventEmitter } = require('events');
 
-const expressMock = function() {
+const expressMock = function () {
     return {
         use: sinon.spy(),
         listen: sinon.spy(),
@@ -37,13 +37,13 @@ describe('Logger tests', () => {
         it('should define workflow log size limit default in case of non provided value', () => {
             const Logger = proxyquire('../lib/logger', {});
 
-            const loggerId               = 'loggerId';
-            const firebaseAuthUrl        = 'firebaseAuthUrl';
-            const firebaseSecret         = 'firebaseSecret';
+            const loggerId = 'loggerId';
+            const firebaseAuthUrl = 'firebaseAuthUrl';
+            const firebaseSecret = 'firebaseSecret';
             const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
             const findExistingContainers = false;
 
-            const logger                        = new Logger({
+            const logger = new Logger({
                 loggerId,
                 firebaseAuthUrl,
                 firebaseSecret,
@@ -56,14 +56,14 @@ describe('Logger tests', () => {
         it('should use passed workflow log size limit in case passed', () => {
             const Logger = proxyquire('../lib/logger', {});
 
-            const loggerId               = 'loggerId';
-            const firebaseAuthUrl        = 'firebaseAuthUrl';
-            const firebaseSecret         = 'firebaseSecret';
+            const loggerId = 'loggerId';
+            const firebaseAuthUrl = 'firebaseAuthUrl';
+            const firebaseSecret = 'firebaseSecret';
             const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
             const findExistingContainers = false;
             const logSizeLimit = 5000;
 
-            const logger                        = new Logger({
+            const logger = new Logger({
                 loggerId,
                 firebaseAuthUrl,
                 firebaseSecret,
@@ -80,7 +80,7 @@ describe('Logger tests', () => {
         describe('positive', () => {
 
             it('should start and not listen for existing container in case findExistingContainers param is false', async () => { // jshint ignore:line
-                const taskLogger        = { // jshint ignore:line
+                const taskLogger = { // jshint ignore:line
                     on: sinon.spy(),
                     restore: sinon.spy(() => Q.resolve()),
                     startHealthCheck: sinon.spy(),
@@ -96,17 +96,17 @@ describe('Logger tests', () => {
                     'express': expressMock,
                 });
 
-                const loggerId               = 'loggerId';
-                const taskLoggerConfig = {task: {}, opts: {}};
+                const loggerId = 'loggerId';
+                const taskLoggerConfig = { task: {}, opts: {} };
                 const findExistingContainers = false;
 
-                const logger                        = new Logger({
+                const logger = new Logger({
                     loggerId,
                     taskLoggerConfig,
                     findExistingContainers,
                 });
-                logger._listenForNewContainers      = sinon.spy();
-                logger._writeNewState               = sinon.spy();
+                logger._listenForNewContainers = sinon.spy();
+                logger._writeNewState = sinon.spy();
                 logger._listenForExistingContainers = sinon.spy();
                 logger.start();
 
@@ -120,11 +120,11 @@ describe('Logger tests', () => {
 
             it('should report health check status if failed', async () => { // jshint ignore:line
                 let onHealthCheckReportedCb;
-                const onHealthCheckReportedSpy = sinon.spy((func) =>  {
+                const onHealthCheckReportedSpy = sinon.spy((func) => {
                     onHealthCheckReportedCb = func;
                 });
 
-                const taskLogger        = { // jshint ignore:line
+                const taskLogger = { // jshint ignore:line
                     on: sinon.spy(),
                     restore: sinon.spy(() => Q.resolve()),
                     startHealthCheck: sinon.spy(),
@@ -140,21 +140,21 @@ describe('Logger tests', () => {
                     'express': expressMock,
                 });
 
-                const loggerId               = 'loggerId';
-                const taskLoggerConfig = {task: {}, opts: {}};
+                const loggerId = 'loggerId';
+                const taskLoggerConfig = { task: {}, opts: {} };
                 const findExistingContainers = false;
 
-                const logger                        = new Logger({
+                const logger = new Logger({
                     loggerId,
                     taskLoggerConfig,
                     findExistingContainers,
                 });
-                logger._listenForNewContainers      = sinon.spy();
-                logger._writeNewState               = sinon.spy();
+                logger._listenForNewContainers = sinon.spy();
+                logger._writeNewState = sinon.spy();
                 logger._listenForExistingContainers = sinon.spy();
                 logger.start();
                 await Q.delay(10);
-                onHealthCheckReportedCb({status: 'failed'});
+                onHealthCheckReportedCb({ status: 'failed' });
                 expect(taskLogger.startHealthCheck).to.be.calledOnce;
                 expect(logger.state.failedHealthChecks.length).to.be.equals(1);
 
@@ -162,11 +162,11 @@ describe('Logger tests', () => {
 
             it('should report health check status if succeed', async () => { // jshint ignore:line
                 let onHealthCheckReportedCb;
-                const onHealthCheckReportedSpy = sinon.spy((func) =>  {
+                const onHealthCheckReportedSpy = sinon.spy((func) => {
                     onHealthCheckReportedCb = func;
                 });
 
-                const taskLogger        = { // jshint ignore:line
+                const taskLogger = { // jshint ignore:line
                     on: sinon.spy(),
                     restore: sinon.spy(() => Q.resolve()),
                     startHealthCheck: sinon.spy(),
@@ -182,32 +182,32 @@ describe('Logger tests', () => {
                     'express': expressMock,
                 });
 
-                const loggerId               = 'loggerId';
-                const taskLoggerConfig = {task: {}, opts: {}};
+                const loggerId = 'loggerId';
+                const taskLoggerConfig = { task: {}, opts: {} };
                 const findExistingContainers = false;
 
-                const logger                        = new Logger({
+                const logger = new Logger({
                     loggerId,
                     taskLoggerConfig,
                     findExistingContainers,
                 });
-                logger._listenForNewContainers      = sinon.spy();
-                logger._writeNewState               = sinon.spy();
+                logger._listenForNewContainers = sinon.spy();
+                logger._writeNewState = sinon.spy();
                 logger._listenForExistingContainers = sinon.spy();
                 logger.start();
-                
+
 
                 await Q.delay(10);
-                onHealthCheckReportedCb({status: 'succeed'});
-                
+                onHealthCheckReportedCb({ status: 'succeed' });
+
                 expect(taskLogger.startHealthCheck).to.be.calledOnce;
-                expect(logger.state.healthCheckStatus).to.deep.equal({status: 'succeed'});
+                expect(logger.state.healthCheckStatus).to.deep.equal({ status: 'succeed' });
 
             });
 
             it('should start and listen for existing container in case findExistingContainers param is "true"', async () => {
 
-                const taskLogger        = {
+                const taskLogger = {
                     on: sinon.spy(),
                     restore: sinon.spy(() => Q.resolve()),
                     startHealthCheck: sinon.spy(),
@@ -223,17 +223,17 @@ describe('Logger tests', () => {
                     'express': expressMock,
                 });
 
-                const loggerId               = 'loggerId';
-                const taskLoggerConfig       = {task: {}, opts: {}};
+                const loggerId = 'loggerId';
+                const taskLoggerConfig = { task: {}, opts: {} };
                 const findExistingContainers = 'true';
 
-                const logger                        = new Logger({
+                const logger = new Logger({
                     loggerId,
                     taskLoggerConfig,
                     findExistingContainers
                 });
-                logger._listenForNewContainers      = sinon.spy();
-                logger._writeNewState               = sinon.spy();
+                logger._listenForNewContainers = sinon.spy();
+                logger._writeNewState = sinon.spy();
                 logger._listenForExistingContainers = sinon.spy();
                 logger.start();
                 await Q.delay(10);
@@ -258,7 +258,7 @@ describe('Logger tests', () => {
                     expect(exitCode).to.equal(1);
                     done();
                 });
-                process.exit         = processExitSpy;
+                process.exit = processExitSpy;
 
                 const TaskLoggerFactory = sinon.spy(() => {
                     return Q.reject(new Error('my error'));
@@ -269,8 +269,8 @@ describe('Logger tests', () => {
                     'express': expressMock,
                 });
 
-                const loggerId               = 'loggerId';
-                const taskLoggerConfig       = {task: {}, opts: {}};
+                const loggerId = 'loggerId';
+                const taskLoggerConfig = { task: {}, opts: {} };
                 const findExistingContainers = false;
 
                 const logger = new Logger({
@@ -302,7 +302,7 @@ describe('Logger tests', () => {
                     }
                 });
 
-                const logger            = new Logger({});
+                const logger = new Logger({});
                 logger._handleContainer = sinon.spy();
                 logger._listenForExistingContainers();
                 setTimeout(() => {
@@ -325,7 +325,7 @@ describe('Logger tests', () => {
                     }
                 });
 
-                const logger            = new Logger({});
+                const logger = new Logger({});
                 logger._handleContainer = sinon.spy();
                 logger._listenForExistingContainers();
                 setTimeout(() => {
@@ -352,7 +352,7 @@ describe('Logger tests', () => {
                     }
                 });
 
-                const logger  = new Logger({});
+                const logger = new Logger({});
                 logger._error = sinon.spy((err) => {
                     expect(err.toString()).to.equal('Error: Query of existing containers failed; caused by Error: getting containers error');
                 });
@@ -372,8 +372,8 @@ describe('Logger tests', () => {
 
         it('should call handleContainer in case of an create event', () => {
             const startSpy = sinon.spy();
-            const onSpy    = sinon.spy();
-            const Logger   = proxyquire('../lib/logger', {
+            const onSpy = sinon.spy();
+            const Logger = proxyquire('../lib/logger', {
                 'docker-events': function () {
                     return {
                         start: startSpy,
@@ -442,12 +442,12 @@ describe('Logger tests', () => {
         it('should call process exit in case firebase authentication url was not provided', () => {
             const Logger = proxyquire('../lib/logger', {});
 
-            const loggerId               = 'loggerId';
-            const firebaseAuthUrl        = 'firebaseAuthUrl';
-            const firebaseSecret         = 'firebaseSecret';
+            const loggerId = 'loggerId';
+            const firebaseAuthUrl = 'firebaseAuthUrl';
+            const firebaseSecret = 'firebaseSecret';
             const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
             const findExistingContainers = false;
-            const logger                 = new Logger({
+            const logger = new Logger({
                 loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
             });
             logger.validate();
@@ -459,16 +459,16 @@ describe('Logger tests', () => {
                 expect(exitCode).to.equal(1);
                 done();
             });
-            process.exit         = processExitSpy;
+            process.exit = processExitSpy;
 
             const Logger = proxyquire('../lib/logger', {});
 
-            const loggerId               = 'loggerId';
-            const firebaseAuthUrl        = '';
-            const firebaseSecret         = 'firebaseSecret';
+            const loggerId = 'loggerId';
+            const firebaseAuthUrl = '';
+            const firebaseSecret = 'firebaseSecret';
             const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
             const findExistingContainers = false;
-            const logger                 = new Logger({
+            const logger = new Logger({
                 loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
             });
             logger.validate();
@@ -480,16 +480,16 @@ describe('Logger tests', () => {
                 expect(exitCode).to.equal(1);
                 done();
             });
-            process.exit         = processExitSpy;
+            process.exit = processExitSpy;
 
             const Logger = proxyquire('../lib/logger', {});
 
-            const loggerId               = 'loggerId';
-            const firebaseAuthUrl        = 'firebaseAuthUrl';
+            const loggerId = 'loggerId';
+            const firebaseAuthUrl = 'firebaseAuthUrl';
             const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
-            const firebaseSecret         = '';
+            const firebaseSecret = '';
             const findExistingContainers = false;
-            const logger                 = new Logger({
+            const logger = new Logger({
                 loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
             });
             logger.validate();
@@ -501,16 +501,16 @@ describe('Logger tests', () => {
                 expect(exitCode).to.equal(1);
                 done();
             });
-            process.exit         = processExitSpy;
+            process.exit = processExitSpy;
 
             const Logger = proxyquire('../lib/logger', {});
 
-            const loggerId               = '';
-            const firebaseAuthUrl        = 'firebaseAuthUrl';
-            const firebaseSecret         = 'firebaseSecret';
+            const loggerId = '';
+            const firebaseAuthUrl = 'firebaseAuthUrl';
+            const firebaseSecret = 'firebaseSecret';
             const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
             const findExistingContainers = false;
-            const logger                 = new Logger({
+            const logger = new Logger({
                 loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
             });
             logger.validate();
@@ -531,14 +531,14 @@ describe('Logger tests', () => {
                         const startSpy = sinon.spy(() => {
                             return Q.resolve();
                         });
-                        const infoSpy  = sinon.spy();
+                        const infoSpy = sinon.spy();
                         const errorSpy = sinon.spy();
                         const ContainerLoggerSpy = sinon.spy(() => {
                             const emitter = new EventEmitter();
                             emitter.start = startSpy;
                             return emitter;
                         });
-                        const Logger   = proxyquire('../lib/logger', {
+                        const Logger = proxyquire('../lib/logger', {
                             'cf-logs': {
                                 Logger: () => {
                                     return {
@@ -551,12 +551,12 @@ describe('Logger tests', () => {
                             './ContainerLogger': ContainerLoggerSpy
                         });
 
-                        const loggerId               = 'loggerId';
+                        const loggerId = 'loggerId';
                         const findExistingContainers = false;
-                        const logger                 = new Logger({
+                        const logger = new Logger({
                             loggerId, findExistingContainers
                         });
-                        logger._writeNewState        = sinon.spy();
+                        logger._writeNewState = sinon.spy();
                         logger.taskLogger = {
                             on: sinon.spy(),
                             create: function () {
@@ -565,7 +565,7 @@ describe('Logger tests', () => {
                                 }
                             }
                         };
-                        const container              = {
+                        const container = {
                             Id: 'containerId',
                             Status: ContainerStatus.CREATE,
                             Labels: {
@@ -584,9 +584,9 @@ describe('Logger tests', () => {
                     });
 
                     it('should pass received step log size limit to ContainerLogger', async () => {
-                        const infoSpy  = sinon.spy();
+                        const infoSpy = sinon.spy();
                         const errorSpy = sinon.spy();
-                        const Logger   = proxyquire('../lib/logger', {
+                        const Logger = proxyquire('../lib/logger', {
                             'cf-logs': {
                                 Logger: () => {
                                     return {
@@ -601,12 +601,12 @@ describe('Logger tests', () => {
                             }
                         });
 
-                        const loggerId               = 'loggerId';
+                        const loggerId = 'loggerId';
                         const findExistingContainers = false;
-                        const logger                 = new Logger({
+                        const logger = new Logger({
                             loggerId, findExistingContainers
                         });
-                        logger._writeNewState        = sinon.spy();
+                        logger._writeNewState = sinon.spy();
                         logger.taskLogger = {
                             on: sinon.spy(),
                             create: function () {
@@ -615,7 +615,7 @@ describe('Logger tests', () => {
                                 }
                             }
                         };
-                        const container              = {
+                        const container = {
                             Id: 'containerId',
                             Status: ContainerStatus.CREATE,
                             Labels: {
@@ -631,9 +631,9 @@ describe('Logger tests', () => {
                     });
 
                     it('should pass undefined step log size limit to ContainerLogger in case of no label', async () => {
-                        const infoSpy  = sinon.spy();
+                        const infoSpy = sinon.spy();
                         const errorSpy = sinon.spy();
-                        const Logger   = proxyquire('../lib/logger', {
+                        const Logger = proxyquire('../lib/logger', {
                             'cf-logs': {
                                 Logger: () => {
                                     return {
@@ -645,12 +645,12 @@ describe('Logger tests', () => {
                             }
                         });
 
-                        const loggerId               = 'loggerId';
+                        const loggerId = 'loggerId';
                         const findExistingContainers = false;
-                        const logger                 = new Logger({
+                        const logger = new Logger({
                             loggerId, findExistingContainers
                         });
-                        logger._writeNewState        = sinon.spy();
+                        logger._writeNewState = sinon.spy();
                         logger.taskLogger = {
                             on: sinon.spy(),
                             create: function () {
@@ -659,7 +659,7 @@ describe('Logger tests', () => {
                                 }
                             }
                         };
-                        const container              = {
+                        const container = {
                             Id: 'containerId',
                             Status: ContainerStatus.CREATE,
                             Labels: {
@@ -674,9 +674,9 @@ describe('Logger tests', () => {
                     });
 
                     it('should update total log size when new log message event was sent', async () => {
-                        const infoSpy  = sinon.spy();
+                        const infoSpy = sinon.spy();
                         const errorSpy = sinon.spy();
-                        const Logger   = proxyquire('../lib/logger', {
+                        const Logger = proxyquire('../lib/logger', {
                             'cf-logs': {
                                 Logger: () => {
                                     return {
@@ -691,12 +691,12 @@ describe('Logger tests', () => {
                             }
                         });
 
-                        const loggerId               = 'loggerId';
+                        const loggerId = 'loggerId';
                         const findExistingContainers = false;
-                        const logger                 = new Logger({
+                        const logger = new Logger({
                             loggerId, findExistingContainers
                         });
-                        logger._writeNewState        = sinon.spy();
+                        logger._writeNewState = sinon.spy();
                         logger.taskLogger = {
                             on: sinon.spy(),
                             create: function () {
@@ -707,7 +707,7 @@ describe('Logger tests', () => {
                             setLogSize: sinon.spy()
                         };
 
-                        const container              = {
+                        const container = {
                             Id: 'containerId',
                             Status: ContainerStatus.CREATE,
                             Labels: {
@@ -718,10 +718,10 @@ describe('Logger tests', () => {
                         };
                         logger._handleContainer(container);
                         await Q.delay(10);
-                        expect(logger.logSize).to.equal(0);
+                        expect(logger.totalLogSize).to.equal(0);
                         logger.containerLoggers[0].logSize = 1000;
-                        logger.containerLoggers[0].emit('message.logged');
-                        expect(logger.logSize).to.equal(1000);
+                        logger.containerLoggers[0].emit('message.logged', 1000);
+                        expect(logger.totalLogSize).to.equal(1000);
                         expect(logger.taskLogger.setLogSize).to.have.been.calledWith(1000);
                     });
 
@@ -733,9 +733,9 @@ describe('Logger tests', () => {
                         const startSpy = sinon.spy(() => {
                             return Q.reject(new Error('ContainerLogger error'));
                         });
-                        const infoSpy  = sinon.spy();
+                        const infoSpy = sinon.spy();
                         const errorSpy = sinon.spy();
-                        const Logger   = proxyquire('../lib/logger', {
+                        const Logger = proxyquire('../lib/logger', {
                             'cf-logs': {
                                 Logger: () => {
                                     return {
@@ -755,12 +755,12 @@ describe('Logger tests', () => {
                             }
                         });
 
-                        const loggerId               = 'loggerId';
+                        const loggerId = 'loggerId';
                         const findExistingContainers = false;
-                        const logger                 = new Logger({
+                        const logger = new Logger({
                             loggerId, findExistingContainers
                         });
-                        logger._writeNewState        = sinon.spy();
+                        logger._writeNewState = sinon.spy();
                         logger.taskLogger = {
                             on: sinon.spy(),
                             create: function () {
@@ -770,7 +770,7 @@ describe('Logger tests', () => {
                             },
                             setLogSize: sinon.spy()
                         };
-                        const container              = {
+                        const container = {
                             Id: 'containerId',
                             Status: ContainerStatus.CREATE,
                             Labels: {
@@ -802,9 +802,9 @@ describe('Logger tests', () => {
         describe('do not handle container because it does not need handling', () => {
 
             it('was previously handled', () => {
-                const infoSpy  = sinon.spy();
+                const infoSpy = sinon.spy();
                 const errorSpy = sinon.spy();
-                const Logger   = proxyquire('../lib/logger', {
+                const Logger = proxyquire('../lib/logger', {
                     'cf-logs': {
                         Logger: () => {
                             return {
@@ -816,15 +816,15 @@ describe('Logger tests', () => {
                     }
                 });
 
-                const loggerId               = 'loggerId';
-                const firebaseAuthUrl        = 'firebaseAuthUrl';
-                const firebaseSecret         = 'firebaseSecret';
+                const loggerId = 'loggerId';
+                const firebaseAuthUrl = 'firebaseAuthUrl';
+                const firebaseSecret = 'firebaseSecret';
                 const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
                 const findExistingContainers = false;
-                const logger                 = new Logger({
+                const logger = new Logger({
                     loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
                 });
-                const container              = {
+                const container = {
                     Id: 'containerId',
                     Status: 'start',
                     Labels: {
@@ -832,7 +832,7 @@ describe('Logger tests', () => {
                         'io.codefresh.logger.strategy': LoggerStrategy.LOGS
                     }
                 };
-                logger._containerHandled     = sinon.spy(() => {
+                logger._containerHandled = sinon.spy(() => {
                     return true;
                 });
                 logger._handleContainer(container);
@@ -847,9 +847,9 @@ describe('Logger tests', () => {
             });
 
             it('no loggerId', () => {
-                const infoSpy  = sinon.spy();
+                const infoSpy = sinon.spy();
                 const errorSpy = sinon.spy();
-                const Logger   = proxyquire('../lib/logger', {
+                const Logger = proxyquire('../lib/logger', {
                     'cf-logs': {
                         Logger: () => {
                             return {
@@ -861,15 +861,15 @@ describe('Logger tests', () => {
                     }
                 });
 
-                const loggerId               = 'loggerId';
-                const firebaseAuthUrl        = 'firebaseAuthUrl';
-                const firebaseSecret         = 'firebaseSecret';
+                const loggerId = 'loggerId';
+                const firebaseAuthUrl = 'firebaseAuthUrl';
+                const firebaseSecret = 'firebaseSecret';
                 const firebaseMetricsLogsUrl = 'firebaseMetricsLogsUrl';
                 const findExistingContainers = false;
-                const logger                 = new Logger({
+                const logger = new Logger({
                     loggerId, firebaseAuthUrl, firebaseSecret, findExistingContainers, firebaseMetricsLogsUrl
                 });
-                const container              = {
+                const container = {
                     Id: 'containerId',
                     Status: ContainerStatus.CREATE,
                     Labels: {
@@ -887,9 +887,9 @@ describe('Logger tests', () => {
         describe('do not handle container because of missing details (error)', () => {
 
             it('no containerId', () => {
-                const infoSpy  = sinon.spy();
+                const infoSpy = sinon.spy();
                 const errorSpy = sinon.spy();
-                const Logger   = proxyquire('../lib/logger', {
+                const Logger = proxyquire('../lib/logger', {
                     'cf-logs': {
                         Logger: () => {
                             return {
@@ -901,12 +901,12 @@ describe('Logger tests', () => {
                     }
                 });
 
-                const loggerId               = 'loggerId';
+                const loggerId = 'loggerId';
                 const findExistingContainers = false;
-                const logger                 = new Logger({
+                const logger = new Logger({
                     loggerId, findExistingContainers
                 });
-                const container              = {
+                const container = {
                     Status: ContainerStatus.CREATE,
                     Labels: {
                         'io.codefresh.logger.id': 'loggerId',
@@ -920,9 +920,9 @@ describe('Logger tests', () => {
             });
 
             it('no container status', () => {
-                const infoSpy  = sinon.spy();
+                const infoSpy = sinon.spy();
                 const errorSpy = sinon.spy();
-                const Logger   = proxyquire('../lib/logger', {
+                const Logger = proxyquire('../lib/logger', {
                     'cf-logs': {
                         Logger: () => {
                             return {
@@ -934,12 +934,12 @@ describe('Logger tests', () => {
                     }
                 });
 
-                const loggerId               = 'loggerId';
+                const loggerId = 'loggerId';
                 const findExistingContainers = false;
-                const logger                 = new Logger({
+                const logger = new Logger({
                     loggerId, findExistingContainers
                 });
-                const container              = {
+                const container = {
                     Id: 'containerId',
                     Labels: {
                         'io.codefresh.logger.id': 'loggerId',
@@ -953,9 +953,9 @@ describe('Logger tests', () => {
             });
 
             it('no step name', () => {
-                const infoSpy  = sinon.spy();
+                const infoSpy = sinon.spy();
                 const errorSpy = sinon.spy();
-                const Logger   = proxyquire('../lib/logger', {
+                const Logger = proxyquire('../lib/logger', {
                     'cf-logs': {
                         Logger: () => {
                             return {
@@ -967,12 +967,12 @@ describe('Logger tests', () => {
                     }
                 });
 
-                const loggerId               = 'loggerId';
+                const loggerId = 'loggerId';
                 const findExistingContainers = false;
-                const logger                 = new Logger({
+                const logger = new Logger({
                     loggerId, findExistingContainers
                 });
-                const container              = {
+                const container = {
                     Id: 'containerId',
                     Status: ContainerStatus.CREATE,
                     Labels: {
@@ -986,9 +986,9 @@ describe('Logger tests', () => {
             });
 
             it('no strategy provided', () => {
-                const infoSpy  = sinon.spy();
+                const infoSpy = sinon.spy();
                 const errorSpy = sinon.spy();
-                const Logger   = proxyquire('../lib/logger', {
+                const Logger = proxyquire('../lib/logger', {
                     'cf-logs': {
                         Logger: () => {
                             return {
@@ -1000,12 +1000,12 @@ describe('Logger tests', () => {
                     }
                 });
 
-                const loggerId               = 'loggerId';
+                const loggerId = 'loggerId';
                 const findExistingContainers = false;
-                const logger                 = new Logger({
+                const logger = new Logger({
                     loggerId, findExistingContainers
                 });
-                const container              = {
+                const container = {
                     Id: 'containerId',
                     Status: ContainerStatus.CREATE,
                     Labels: {
@@ -1020,9 +1020,9 @@ describe('Logger tests', () => {
             });
 
             it('provided strategy does not exist', () => {
-                const infoSpy  = sinon.spy();
+                const infoSpy = sinon.spy();
                 const errorSpy = sinon.spy();
-                const Logger   = proxyquire('../lib/logger', {
+                const Logger = proxyquire('../lib/logger', {
                     'cf-logs': {
                         Logger: () => {
                             return {
@@ -1034,12 +1034,12 @@ describe('Logger tests', () => {
                     }
                 });
 
-                const loggerId               = 'loggerId';
+                const loggerId = 'loggerId';
                 const findExistingContainers = false;
-                const logger                 = new Logger({
+                const logger = new Logger({
                     loggerId, findExistingContainers
                 });
-                const container              = {
+                const container = {
                     Id: 'containerId',
                     Status: ContainerStatus.CREATE,
                     Labels: {
@@ -1055,9 +1055,9 @@ describe('Logger tests', () => {
             });
 
             it('container status is create and strategy is logs', () => {
-                const infoSpy  = sinon.spy();
+                const infoSpy = sinon.spy();
                 const errorSpy = sinon.spy();
-                const Logger   = proxyquire('../lib/logger', {
+                const Logger = proxyquire('../lib/logger', {
                     'cf-logs': {
                         Logger: () => {
                             return {
@@ -1069,12 +1069,12 @@ describe('Logger tests', () => {
                     }
                 });
 
-                const loggerId               = 'loggerId';
+                const loggerId = 'loggerId';
                 const findExistingContainers = false;
-                const logger                 = new Logger({
+                const logger = new Logger({
                     loggerId, findExistingContainers
                 });
-                const container              = {
+                const container = {
                     Id: 'containerId',
                     Status: ContainerStatus.CREATE,
                     Labels: {
@@ -1101,9 +1101,9 @@ describe('Logger tests', () => {
     describe('log limit exceeded', () => {
 
         it('should return true in case log limit exceeded', async () => {
-            const infoSpy  = sinon.spy();
+            const infoSpy = sinon.spy();
             const errorSpy = sinon.spy();
-            const Logger   = proxyquire('../lib/logger', {
+            const Logger = proxyquire('../lib/logger', {
                 'cf-logs': {
                     Logger: () => {
                         return {
@@ -1115,12 +1115,12 @@ describe('Logger tests', () => {
                 }
             });
 
-            const loggerId               = 'loggerId';
+            const loggerId = 'loggerId';
             const findExistingContainers = false;
-            const logger                 = new Logger({
+            const logger = new Logger({
                 loggerId, findExistingContainers
             });
-            logger._writeNewState        = sinon.spy();
+            logger._writeNewState = sinon.spy();
 
             logger.taskLogger = {
                 on: sinon.spy(),
@@ -1132,7 +1132,7 @@ describe('Logger tests', () => {
                 setLogSize: sinon.spy()
             };
 
-            const container              = {
+            const container = {
                 Id: 'containerId',
                 Status: ContainerStatus.CREATE,
                 Labels: {
@@ -1144,14 +1144,14 @@ describe('Logger tests', () => {
             logger.logSizeLimit = 100;
             logger._handleContainer(container);
             await Q.delay(10);
-            logger.containerLoggers[0].logSize = logger.logSizeLimit + 1;
+            logger.containerLoggers[0].emit('message.logged', logger.logSizeLimit + 1);
             expect(logger.logLimitExceeded()).to.equal(true);
         });
 
         it('should return false in case log limit not exceeded', async () => {
-            const infoSpy  = sinon.spy();
+            const infoSpy = sinon.spy();
             const errorSpy = sinon.spy();
-            const Logger   = proxyquire('../lib/logger', {
+            const Logger = proxyquire('../lib/logger', {
                 'cf-logs': {
                     Logger: () => {
                         return {
@@ -1163,12 +1163,12 @@ describe('Logger tests', () => {
                 }
             });
 
-            const loggerId               = 'loggerId';
+            const loggerId = 'loggerId';
             const findExistingContainers = false;
-            const logger                 = new Logger({
+            const logger = new Logger({
                 loggerId, findExistingContainers
             });
-            logger._writeNewState        = sinon.spy();
+            logger._writeNewState = sinon.spy();
             const setSpy = sinon.spy();
             logger.firebaseMetricsLogs = {
                 child: () => {
@@ -1188,7 +1188,7 @@ describe('Logger tests', () => {
                 setLogSize: sinon.spy()
             };
 
-            const container              = {
+            const container = {
                 Id: 'containerId',
                 Status: ContainerStatus.CREATE,
                 Labels: {
@@ -1205,9 +1205,9 @@ describe('Logger tests', () => {
         });
 
         it('should return false in case log limit was not defined', async () => {
-            const infoSpy  = sinon.spy();
+            const infoSpy = sinon.spy();
             const errorSpy = sinon.spy();
-            const Logger   = proxyquire('../lib/logger', {
+            const Logger = proxyquire('../lib/logger', {
                 'cf-logs': {
                     Logger: () => {
                         return {
@@ -1219,12 +1219,12 @@ describe('Logger tests', () => {
                 }
             });
 
-            const loggerId               = 'loggerId';
+            const loggerId = 'loggerId';
             const findExistingContainers = false;
-            const logger                 = new Logger({
+            const logger = new Logger({
                 loggerId, findExistingContainers
             });
-            logger._writeNewState        = sinon.spy();
+            logger._writeNewState = sinon.spy();
 
             logger.taskLogger = {
                 on: sinon.spy(),
@@ -1236,7 +1236,7 @@ describe('Logger tests', () => {
                 setLogSize: sinon.spy()
             };
 
-            const container              = {
+            const container = {
                 Id: 'containerId',
                 Status: ContainerStatus.CREATE,
                 Labels: {
@@ -1256,9 +1256,9 @@ describe('Logger tests', () => {
     describe('total log size', () => {
 
         it('should return true in case log limit exceeded for one container logger', async () => {
-            const infoSpy  = sinon.spy();
+            const infoSpy = sinon.spy();
             const errorSpy = sinon.spy();
-            const Logger   = proxyquire('../lib/logger', {
+            const Logger = proxyquire('../lib/logger', {
                 'cf-logs': {
                     Logger: () => {
                         return {
@@ -1270,12 +1270,12 @@ describe('Logger tests', () => {
                 }
             });
 
-            const loggerId               = 'loggerId';
+            const loggerId = 'loggerId';
             const findExistingContainers = false;
-            const logger                 = new Logger({
+            const logger = new Logger({
                 loggerId, findExistingContainers
             });
-            logger._writeNewState        = sinon.spy();
+            logger._writeNewState = sinon.spy();
             logger.taskLogger = {
                 on: sinon.spy(),
                 create: function () {
@@ -1286,7 +1286,7 @@ describe('Logger tests', () => {
                 setLogSize: sinon.spy()
             };
 
-            const container              = {
+            const container = {
                 Id: 'containerId',
                 Status: ContainerStatus.CREATE,
                 Labels: {
@@ -1297,19 +1297,19 @@ describe('Logger tests', () => {
             };
             logger._handleContainer(container);
             await Q.delay(10);
-            logger.containerLoggers[0].logSize = 1000;
-            expect(logger._getTotalLogSize()).to.equal(1000);
+            logger.containerLoggers[0].emit('message.logged', 1000);
+            expect(logger.totalLogSize).to.equal(1000);
         });
 
         it('should return true in case log limit exceeded for two container loggers', async () => {
-            const infoSpy  = sinon.spy();
+            const infoSpy = sinon.spy();
             const errorSpy = sinon.spy();
             const ContainerLoggerSpy = sinon.spy(() => {
                 const emitter = new EventEmitter();
                 emitter.start = sinon.spy(() => Q.resolve());
                 return emitter;
             });
-            const Logger   = proxyquire('../lib/logger', {
+            const Logger = proxyquire('../lib/logger', {
                 'cf-logs': {
                     Logger: () => {
                         return {
@@ -1322,12 +1322,12 @@ describe('Logger tests', () => {
                 './ContainerLogger': ContainerLoggerSpy
             });
 
-            const loggerId               = 'loggerId';
+            const loggerId = 'loggerId';
             const findExistingContainers = false;
-            const logger                 = new Logger({
+            const logger = new Logger({
                 loggerId, findExistingContainers
             });
-            logger._writeNewState        = sinon.spy();
+            logger._writeNewState = sinon.spy();
             logger.taskLogger = {
                 on: sinon.spy(),
                 create: function () {
@@ -1338,7 +1338,7 @@ describe('Logger tests', () => {
                 setLogSize: sinon.spy()
             };
 
-            const container              = {
+            const container = {
                 Id: 'containerId',
                 Status: ContainerStatus.CREATE,
                 Labels: {
@@ -1351,9 +1351,10 @@ describe('Logger tests', () => {
             container.Id = 'newid';
             logger._handleContainer(container);
             await Q.delay(10);
-            logger.containerLoggers[0].logSize = 1000;
-            logger.containerLoggers[1].logSize = 1000;
-            expect(logger._getTotalLogSize()).to.equal(2000);
+            logger.containerLoggers[0].emit('message.logged', 1000);
+            logger.containerLoggers[1].emit('message.logged', 1000);
+            expect(logger.totalLogSize).to.equal(2000);
+            expect(logger.taskLogger.setLogSize).to.have.been.calledWith(2000);
         });
 
     });
@@ -1370,7 +1371,7 @@ describe('Logger tests', () => {
             taskLogger.awaitLogsFlushed = () => awaitLogsFlushed.promise;
 
             const dockerEvents = new EventEmitter();
-            dockerEvents.start = () => {};
+            dockerEvents.start = () => { };
 
             const containerLogger = new EventEmitter();
             containerLogger.start = () => Q.resolve();
@@ -1381,9 +1382,9 @@ describe('Logger tests', () => {
                 './ContainerLogger': function () { return containerLogger; },
                 'express': expressMock,
             });
-    
+
             const loggerId = 'loggerId';
-            const taskLoggerConfig = {task: {}, opts: {}};
+            const taskLoggerConfig = { task: {}, opts: {} };
             const findExistingContainers = false;
             const buildFinishedPromise = Q.defer();
 
@@ -1393,8 +1394,8 @@ describe('Logger tests', () => {
                 findExistingContainers,
                 buildFinishedPromise: buildFinishedPromise.promise,
             });
-            logger._writeNewState = () => {};
-            
+            logger._writeNewState = () => { };
+
             const container = {
                 Id: 'containerId',
                 Status: 'running',
@@ -1406,11 +1407,11 @@ describe('Logger tests', () => {
                 }
             }
 
-            
+
             logger.start();
             await Q.delay(10);
             expect(logger.containerLoggers).to.have.lengthOf(0);
-            
+
             // create 1st container
             dockerEvents.emit('create', container);
             await Q.delay(10);
@@ -1460,7 +1461,7 @@ describe('Logger tests', () => {
             taskLogger.getStatus = sinon.spy();
 
             const dockerEvents = new EventEmitter();
-            dockerEvents.start = () => {};
+            dockerEvents.start = () => { };
 
             const containerLogger = new EventEmitter();
             containerLogger.start = () => Q.resolve();
@@ -1474,11 +1475,11 @@ describe('Logger tests', () => {
 
             const logger = new Logger({
                 loggerId: 'loggerId',
-                taskLoggerConfig: {task: {}, opts: {}},
+                taskLoggerConfig: { task: {}, opts: {} },
                 findExistingContainers: false,
                 buildFinishedPromise: Q.defer().promise,
             });
-            logger._writeNewState = () => {};
+            logger._writeNewState = () => { };
             logger._updateLastLoggingDate = sinon.spy();
             logger.start();
             await Q.delay(10);
@@ -1487,7 +1488,7 @@ describe('Logger tests', () => {
 
             taskLogger.emit('flush');
             await Q.delay(10);
-            
+
             expect(logger._updateLastLoggingDate).to.have.been.calledOnce;
         });
     });
@@ -1510,22 +1511,22 @@ describe('Logger tests', () => {
                 'express': expressMock,
             });
 
-            const loggerId               = 'loggerId';
-            const taskLoggerConfig = {task: {}, opts: {}};
+            const loggerId = 'loggerId';
+            const taskLoggerConfig = { task: {}, opts: {} };
             const findExistingContainers = false;
 
-            const logger                        = new Logger({
+            const logger = new Logger({
                 loggerId,
                 taskLoggerConfig,
                 findExistingContainers,
             });
-            logger._listenForNewContainers      = sinon.spy();
-            logger._writeNewState               = sinon.spy();
+            logger._listenForNewContainers = sinon.spy();
+            logger._writeNewState = sinon.spy();
             logger._listenForExistingContainers = sinon.spy();
             process.env.PORT = 1337;
             process.env.HOST = '127.0.0.1';
             logger.start();
-            
+
             await Q.delay(10);
 
             expect(logger._app).to.not.be.undefined;
