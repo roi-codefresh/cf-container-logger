@@ -47,7 +47,7 @@
   "scripts": {
     "lint": "eslint '*/**/*.js'",
     "lint-fix": "eslint '*/**/*.js' --fix",
-    "test": "node ./node_modules/mocha/bin/_mocha './{,!(node_modules)/**/}*.spec.js' --exit",
+    "test": "mocha './**/*.spec.js' --timeout 10000 --ignore './node_modules/**/*' --exit",
     "test:ci": "yarn test",
     "start": "node lib/index.js",
     "version": "exit 0"
